@@ -1,0 +1,53 @@
+# @speculos-harness/bundler — the locked-down build-service container.
+#
+# PRE-RELEASE: this is a stub, not a working Dockerfile. It documents the shape of the
+# hardened image that ships as `speculos/harness-bundler` with the v0.1 code drop. It is
+# named Dockerfile.stub (not Dockerfile) on purpose so nothing tries to build it today.
+# At v0.1 it becomes a real, published, multi-stage build.
+#
+# WHY THIS IS A CONTAINER AND NOT JUST A LIBRARY
+# ----------------------------------------------
+# `bun add` runs arbitrary npm, and Bun.build resolves the app's imports against this
+# box's own node_modules. That means the build service is the one component that
+# executes untrusted dependency code. It is shipped ONLY as this locked-down image so a
+# naive setup (root, install scripts enabled, temp dir moved out from under cwd) cannot
+# turn a bundle request into remote code execution. A startup self-check refuses to boot
+# if any invariant below is misconfigured away.
+#
+# THE INVARIANTS THE v0.1 IMAGE WILL ENFORCE
+# ------------------------------------------
+#   * Runs as a NON-ROOT user (a dedicated unprivileged account, never UID 0).
+#   * All installs run with --ignore-scripts, always — a package cannot execute
+#     install-time scripts on the build box. This flag is not configurable off.
+#   * Package name and version are regex-validated before they ever reach `bun add`.
+#   * Builds happen in an EPHEMERAL directory UNDER the process cwd (load-bearing: it is
+#     what lets node_modules resolve) and are wiped per request.
+#   * The base dependency set the system prompt promises is BAKED at image build time
+#     (react 19, recharts, @tanstack/react-table, date-fns, lucide-react, ...), from the
+#     same single list the prompt's LIBRARIES block is generated from; a startup
+#     self-check asserts every promised package resolves.
+#   * Only the bundler port is exposed; no secrets are baked into the image.
+#
+# INTENDED SHAPE (illustrative — not runnable until v0.1)
+# -------------------------------------------------------
+#
+#   FROM oven/bun:1 AS base
+#   # Create and switch to an unprivileged user; the build never runs as root.
+#   RUN useradd --create-home --shell /usr/sbin/nologin bundler
+#   WORKDIR /home/bundler/app
+#
+#   # Bake the promised base dependencies with --ignore-scripts, generated from one list.
+#   COPY base-package.json ./package.json
+#   RUN bun install --ignore-scripts
+#
+#   # The sidecar source (the serve() entrypoint from src/index.ts).
+#   COPY --chown=bundler:bundler dist ./dist
+#
+#   USER bundler
+#   EXPOSE 8081
+#   # The entrypoint runs the startup self-check FIRST and exits non-zero if any
+#   # invariant above is violated, then starts the server.
+#   CMD ["bun", "dist/serve.js"]
+#
+# See spec/bundle.md and spec/security.md for the normative bundle contract and the
+# non-negotiable build-service safety rules.

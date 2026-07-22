@@ -1,0 +1,63 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+.pnp
+.pnp.js
+jspm_packages/
+
+# Build output
+dist/
+build/
+out/
+.next/
+.turbo/
+*.tsbuildinfo
+.vite/
+.builds/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+*.egg
+.eggs/
+.Python
+.venv/
+venv/
+env/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.tox/
+
+# Packaging
+*.whl
+*.tar.gz
+
+# Environment / secrets — never commit real keys
+.env
+.env.*
+!.env.example
+
+# Local databases (reference SQLite / FS stores)
+*.db
+*.sqlite
+*.sqlite3
+projects.db
+speculos-harness.db
+
+# Logs and coverage
+*.log
+npm-debug.log*
+pnpm-debug.log*
+coverage/
+.coverage
+htmlcov/
+
+# Editor / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db

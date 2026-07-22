@@ -1,0 +1,46 @@
+# Minimal Speculos Harness stack — three services, one command.
+#
+# This is the same topology as the repo-root docker-compose.yml, scoped to the
+# minimal example's sources. `docker compose up` from this directory brings up:
+#
+#   web     -> the React workspace (./web), the <Builder> embed
+#   agent   -> the mountable FastAPI router (./backend/main.py)
+#   bundler -> the build service: {files, deps} in, {code, css} out
+#
+# PRE-RELEASE: the bundler image and the example builds referenced here do not
+# exist yet. This file is the intended shape of the stack; it becomes runnable
+# with the v0.1 code drop, at which point `docker compose up` opens a working
+# builder at http://localhost:5173.
+
+services:
+  bundler:
+    # The locked-down build container: non-root, ephemeral build dir, installs
+    # run with --ignore-scripts. Published to a registry with the v0.1 drop.
+    image: speculos/harness-bundler
+    ports:
+      - "8081:8081"
+
+  agent:
+    # The Python agent kit mounted on this example's FastAPI app.
+    build: ./backend
+    env_file:
+      # Copy backend/.env.example to backend/.env and fill in your key.
+      - ./backend/.env
+    environment:
+      # Where the bundler sidecar lives, inside the compose network.
+      - BUNDLER_URL=http://bundler:8081
+    depends_on:
+      - bundler
+    ports:
+      - "8000:8000"
+
+  web:
+    # The React workspace example. Points at the agent router (mounted at
+    # /api/builder on the agent service).
+    build: ./web
+    environment:
+      - HARNESS_BASE_URL=http://localhost:8000/api/builder
+    depends_on:
+      - agent
+    ports:
+      - "5173:5173"

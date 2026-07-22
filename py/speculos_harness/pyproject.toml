@@ -1,0 +1,73 @@
+# pyproject.toml — speculos-harness (Python backend kit)
+#
+# The mountable FastAPI router and adapter interfaces for Speculos Harness:
+# an embeddable AI app-building workspace. This is the production engine
+# behind Speculos, open-sourced as one agent loop, in one language, on the
+# revenue path — not a second implementation that can rot.
+#
+# PRE-RELEASE: version is pinned to 0.0.0 on purpose. The real implementation
+# arrives with the v0.1 code drop. Everything here today is structure, typed
+# interfaces, and stubs. Watch or star the repo to follow.
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "speculos-harness"
+version = "0.0.0"
+description = "Embeddable AI app-building workspace — the mountable FastAPI agent router and adapter interfaces. Pre-release; code lands with v0.1."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Apache-2.0" }
+keywords = ["ai", "agent", "code-generation", "fastapi", "sse", "llm", "app-builder"]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Framework :: FastAPI",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Typing :: Typed",
+]
+
+# Runtime dependencies.
+#
+# The interface and stub surface published here imports only `fastapi`, which
+# is why it is the single hard dependency today. The heavier moving parts land
+# with v0.1 and are listed below as commented v0.1 targets so integrators can
+# see what the real package will pull in:
+#
+#   TODO(v0.1): uncomment and version-pin as the code drop lands.
+#     - litellm      — the reference LLMProvider speaks whatever LiteLLM speaks
+#                      (OpenAI / Anthropic / Bedrock / Ollama / a LiteLLM proxy).
+#     - httpx        — async client for the bundler sidecar + connector RPC.
+#     - pydantic     — wire models generated from the protocol JSON Schema.
+dependencies = [
+    "fastapi>=0.110",
+    # "litellm>=1.40",   # TODO(v0.1): reference LLMProvider backend
+    # "httpx>=0.27",     # TODO(v0.1): bundler sidecar + connector RPC client
+    # "pydantic>=2.6",   # TODO(v0.1): generated wire models
+]
+
+[project.urls]
+Homepage = "https://speculos.ai"
+Repository = "https://github.com/speculosai/spec_harness"
+
+[project.optional-dependencies]
+# Reference adapters that pull extra drivers. Kept optional so the core boots
+# with zero configuration and no surprise transitive installs.
+#   TODO(v0.1): wire these to the reference stores/connectors as they land.
+postgres = [
+    # "psycopg[binary]>=3.1",   # TODO(v0.1): postgres_connector driver
+]
+dev = [
+    "pytest>=8.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["speculos_harness"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

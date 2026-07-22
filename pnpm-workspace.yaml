@@ -1,0 +1,9 @@
+# pnpm workspace — the TypeScript / npm side of the Speculos Harness monorepo.
+# The Python package lives under py/ and is published to PyPI separately.
+#
+# Strict one-way dependency layering:
+#   @speculos-harness/protocol   depends on nothing
+#   adapters (preview, bundler, sandbox-browser, connectors-mcp)  depend only on protocol
+#   @speculos-harness/react      depends on protocol (+ preview)
+packages:
+  - 'packages/*'

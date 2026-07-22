@@ -1,0 +1,13 @@
+# Minimal Speculos Harness backend — dependencies.
+#
+# PRE-RELEASE: the backend kit is published spec-first at version 0.0.0. Pin it
+# to the v0.1 release once the code drop lands; until then, install from the
+# repo to get the typed interfaces and stubs.
+#
+#   TODO(v0.1): replace the source install below with `speculos-harness>=0.1`.
+
+# The mountable agent router + adapter interfaces (this repo's py/ package).
+speculos-harness
+
+# The ASGI server used to run this example. Any ASGI server works.
+uvicorn[standard]>=0.29

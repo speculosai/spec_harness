@@ -1,0 +1,52 @@
+/*
+ * @speculos-harness/react — default workspace stylesheet.
+ *
+ * PRE-RELEASE: this is the token surface, not the full stylesheet. The complete
+ * styles for the chat pane, preview pane, file explorer, and version timeline ship
+ * with the v0.1 code drop. What is here is the contract that will not change: the
+ * workspace is built on CSS custom properties, so overriding these tokens (colors,
+ * radii, type) re-themes the whole workspace to your design system without a fork.
+ *
+ * TODO(v0.1): ship the component styles that consume these tokens.
+ */
+
+:root {
+  /* Color */
+  --harness-color-bg: #ffffff;
+  --harness-color-surface: #f6f7f9;
+  --harness-color-border: #e4e7ec;
+  --harness-color-text: #101828;
+  --harness-color-text-muted: #667085;
+  --harness-color-accent: #4f46e5;
+  --harness-color-accent-text: #ffffff;
+  --harness-color-danger: #d92d20;
+
+  /* Radii */
+  --harness-radius-sm: 6px;
+  --harness-radius-md: 10px;
+  --harness-radius-lg: 16px;
+
+  /* Type */
+  --harness-font-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --harness-font-mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, monospace;
+  --harness-font-size-base: 14px;
+
+  /* Spacing */
+  --harness-space-1: 4px;
+  --harness-space-2: 8px;
+  --harness-space-3: 12px;
+  --harness-space-4: 16px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --harness-color-bg: #0c0e12;
+    --harness-color-surface: #16181d;
+    --harness-color-border: #2a2e37;
+    --harness-color-text: #f5f6f7;
+    --harness-color-text-muted: #98a2b3;
+    --harness-color-accent: #7c74ff;
+    --harness-color-accent-text: #ffffff;
+    --harness-color-danger: #f97066;
+  }
+}
