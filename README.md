@@ -52,6 +52,8 @@ Also in the loop: fast rebuilds, a readable step log, context that survives betw
 
 **Coming to the core:** read-only share links, and background jobs - schedules, resumable runs, and durable state, so an app keeps working with the tab closed.
 
+The rest of the list is in [ROADMAP.md](./ROADMAP.md).
+
 ---
 
 ## Drop it into your product

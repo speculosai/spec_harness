@@ -1,7 +1,7 @@
 /**
  * A tiny placeholder logo for the Northwind example.
  *
- * The `brand.Logo` prop is a slot — pass any element. This one is a plain inline
+ * The `brand.Logo` prop is a slot - pass any element. This one is a plain inline
  * SVG so the example has no image assets to ship. Replace it with your own mark.
  */
 export function NorthwindLogo() {

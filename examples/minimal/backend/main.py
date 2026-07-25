@@ -1,17 +1,10 @@
-"""A complete Speculos Harness backend — the minimal example.
+"""A complete Speculos Harness backend - the minimal example.
 
 This is the whole server: mount one router on a FastAPI app, hand it a store,
 an LLM provider, and a build brief, and you have an app-building workspace. It
 is written to be read top to bottom and copied into your own service.
 
-PRE-RELEASE: this file is real, runnable-shaped code against the decided public
-API, but the package it imports is still spec-first. Boot it today and it comes
-up and answers ``GET /api/builder/capabilities``, but every working route
-returns ``501 {"error": "not yet implemented — v0.1"}`` and the reference
-adapters raise ``NotImplementedError``. It becomes a working builder with the
-v0.1 code drop. Watch or star the repo to follow.
-
-Run it (once v0.1 lands)::
+Run it::
 
     pip install -r requirements.txt
     cp .env.example .env          # then edit in your key
@@ -32,7 +25,7 @@ from speculos_harness.llm import LiteLLMProvider
 from speculos_harness.stores import SQLiteProjectStore
 
 # ---------------------------------------------------------------------------
-# Configuration — driven entirely by environment variables.
+# Configuration - driven entirely by environment variables.
 #
 # Copy .env.example to .env and fill in a real key. Nothing here is secret in
 # the source: the values come from the environment so this file is safe to
@@ -40,9 +33,10 @@ from speculos_harness.stores import SQLiteProjectStore
 # ---------------------------------------------------------------------------
 
 #: The company-wide default model, in LiteLLM notation. LiteLLM speaks one API
-#: across OpenAI, Anthropic, Bedrock, Ollama, and a LiteLLM proxy, so switching
-#: providers is a config change, not a code change.
-DEFAULT_MODEL = os.environ.get("HARNESS_MODEL", "openai/gpt-4.1")
+#: across every major provider and a LiteLLM proxy, so switching providers is a
+#: config change, not a code change. Inference is billed by your provider, on
+#: your keys - no markup.
+DEFAULT_MODEL = os.environ.get("HARNESS_MODEL", "anthropic/claude-fable-5")
 
 #: Where the bundler sidecar (``speculos/harness-bundler``) is reachable. In the
 #: shipped docker-compose this resolves to the ``bundler`` service.
@@ -53,23 +47,21 @@ BUNDLER_URL = os.environ.get("BUNDLER_URL", "http://bundler:8081")
 LITELLM_PROXY = os.environ.get("LITELLM_PROXY") or None
 
 # ---------------------------------------------------------------------------
-# The build brief — Northwind Property Group.
+# The build brief - Northwind Property Group.
 #
-# Injected into the system prompt on every turn, so a standing house rule is
-# set once by an administrator instead of restated by every user on every
-# request. Put your design system here too, so all generated apps follow the
-# required look.
+# Included in the system prompt on every build, so a standing house rule is set
+# once by an administrator instead of restated by every user on every request.
+# The design system goes here too, so every generated app comes out on-brand.
 # ---------------------------------------------------------------------------
 
 INSTRUCTIONS = """
 We are Northwind Property Group, a property-management company.
 
-- All monetary amounts are in US dollars (USD). Format them like $1,234.56.
-- Our fiscal year runs April 1 to March 31. "This year" and any quarter labels
+- Amounts are in USD. Format them like $1,234.56.
+- The fiscal year runs April 1 to March 31. "This year" and any quarter labels
   follow that fiscal calendar, not the calendar year.
-- Every table you generate must have a "Export CSV" button that downloads the
-  visible rows.
-- Prefer clear, dense operator dashboards over marketing-style layouts.
+- Use the Northwind design system for every app.
+- Every table needs a CSV export button that downloads the visible rows.
 """.strip()
 
 
@@ -77,11 +69,11 @@ We are Northwind Property Group, a property-management company.
 # Auth (optional).
 #
 # The default is single-user: every request resolves to an editing local user,
-# which is what you want for a laptop or a single-tenant deploy. When you are
-# ready to put this behind your real sessions, implement an AuthProvider that
-# turns a request into a Principal. The example below shows the three outcomes
-# the interface supports — allow, plain 401, and a typed in-band denial (402)
-# for an authenticated-but-blocked caller such as an expired plan.
+# which is what you want for a laptop or a single-tenant deploy. To put this
+# behind your real sessions, implement an AuthProvider that turns a request into
+# a Principal. The example below shows the three outcomes the interface
+# supports - allow, plain 401, and a typed in-band denial (402) for an
+# authenticated-but-blocked caller such as an expired plan.
 #
 # Uncomment it, wire up your own ``my_session_lookup``, and pass
 # ``auth=MyAuth()`` to ``HarnessAgent`` below.
@@ -96,7 +88,7 @@ We are Northwind Property Group, a property-management company.
 #         if user is None:
 #             return None  # -> plain 401
 #         if user.plan_expired:
-#             # authed but blocked — typed, in-band, no exception around the
+#             # authed but blocked - typed, in-band, no exception around the
 #             # abstraction. The frontend can turn 402 into an upgrade prompt.
 #             return AuthDenied(status=402, message="upgrade required")
 #         return Principal(
@@ -112,15 +104,15 @@ We are Northwind Property Group, a property-management company.
 
 llm = LiteLLMProvider(
     model=DEFAULT_MODEL,
-    api_key=os.environ.get("OPENAI_API_KEY", "sk-your-key-here"),
+    api_key=os.environ.get("ANTHROPIC_API_KEY", "sk-ant-..."),
     api_base=LITELLM_PROXY,  # None -> call the provider directly
     allowed_models=[
         # The in-chat model picker's menu, surfaced via /capabilities.
-        "openai/gpt-4.1",
-        "anthropic/claude-sonnet-5",
-        "ollama/llama3.3",  # a free, local option — no key required
+        "anthropic/claude-fable-5",
+        "openai/gpt-5.6-sol",
+        "zai/glm-5.2",  # open weights
     ],
-    supports_prompt_cache=False,
+    supports_prompt_cache=True,  # keeps cost per build flat across turns
 )
 
 agent = HarnessAgent(

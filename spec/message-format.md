@@ -11,7 +11,7 @@ name would silently drop that content on reload.
 
 A stored message is an OpenAI-style chat message: a `role`
 (`system` | `user` | `assistant` | `tool`), a `content` that is either a string
-or an array of content parts, and — for assistant turns that call tools —
+or an array of content parts, and - for assistant turns that call tools -
 `tool_calls`, matched by `tool` messages carrying a `tool_call_id`.
 
 ```jsonc
@@ -36,9 +36,9 @@ A CSV attachment is persisted as a content part of type `attachment_csv`:
   "rows": 812 }
 ```
 
-- `name` — the original filename, shown in the UI.
-- `text` — the raw CSV content.
-- `rows` — the row count, shown before the file is parsed.
+- `name` - the original filename, shown in the UI.
+- `text` - the raw CSV content.
+- `rows` - the row count, shown before the file is parsed.
 
 ### Legacy alias read rule (normative)
 
@@ -47,7 +47,7 @@ under the name `speculos_csv`. That name is baked into every conversation create
 before the rename. Therefore:
 
 - **On read**, both the client rehydrator and the server normalizer MUST accept
-  **either** `attachment_csv` **or** `speculos_csv` — indefinitely. Treat them as
+  **either** `attachment_csv` **or** `speculos_csv` - indefinitely. Treat them as
   the same part.
 - **On write**, emit **only** `attachment_csv`.
 
@@ -80,7 +80,7 @@ As with the CSV part, an earlier build fenced these choices as
 `speculos-choices`. Therefore:
 
 - **On read**, the client MUST accept **either** the `harness-choices` **or** the
-  `speculos-choices` fence — indefinitely.
+  `speculos-choices` fence - indefinitely.
 - **On write**, emit **only** `harness-choices`.
 
 A legacy golden fixture pins this, and the default `<ChatPane>` ships the chips
@@ -92,12 +92,12 @@ History is saved often enough that a dropped connection, a stop, or a crash neve
 loses more than the in-flight token. A conforming server persists messages at
 three points during a turn:
 
-1. **Before the stream starts** — the user's message (with its attachments) is
+1. **Before the stream starts** - the user's message (with its attachments) is
    saved before the first token, so a turn that dies immediately is still
    recorded.
-2. **Per tool** — after each tool call and its result, so partial work survives an
+2. **Per tool** - after each tool call and its result, so partial work survives an
    interruption mid-turn.
-3. **At `done`** — the final assistant message is saved when the turn completes,
+3. **At `done`** - the final assistant message is saved when the turn completes,
    and a `finally`-style guard ensures a save even on an aborted or errored turn.
 
 This is why "never lose a partial turn" and "history survives reload" are

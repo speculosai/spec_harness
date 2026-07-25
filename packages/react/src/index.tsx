@@ -3,12 +3,7 @@
  *
  * The embeddable workspace: a chat panel beside a live, sandboxed preview, plus a
  * read-only file explorer and a version timeline. One provider and one component
- * cover the 90% case; the panes and the headless hooks are exported for full control.
- *
- * PRE-RELEASE: every export in this file is a stub. Types and signatures are frozen
- * to the decided public API so you can integrate against them today, but the bodies
- * throw. The implementation — carved from the production workspace that runs behind
- * Speculos — arrives with the v0.1 code drop.
+ * cover the common case; the panes and the headless hooks are exported for full control.
  */
 
 import type { ReactElement, ReactNode } from 'react';
@@ -20,16 +15,16 @@ import type {
   Snapshot,
 } from '@speculos-harness/protocol';
 
-/** Thrown by every stub in this package until the v0.1 code drop lands. */
-const NOT_IMPLEMENTED = 'speculos-harness: not yet implemented — arrives with the v0.1 code drop';
+/** Placeholder message for the exports the implementation drops into. */
+const NOT_IMPLEMENTED = '@speculos-harness/react: implementation pending';
 
 /* ------------------------------------------------------------------------- *
  * Provider
  * ------------------------------------------------------------------------- */
 
 /**
- * Client auth. `getHeaders` runs on every request the workspace makes — chat SSE,
- * bundle, project/snapshot reads, and the preview bridge-proxy fetches — so identity
+ * Client auth. `getHeaders` runs on every request the workspace makes - chat SSE,
+ * bundle, project/snapshot reads, and the preview bridge-proxy fetches - so identity
  * is attached uniformly. `canEdit: false` yields a read-only viewer (preview
  * full-width, no chat). `shareToken`, when set, is threaded through every runtime RPC.
  */
@@ -82,7 +77,7 @@ export interface HarnessProviderProps {
  * and supplies base URL, namespace, auth, brand, strings, and connectors to everything
  * beneath it.
  *
- * TODO(v0.1): stand up the workspace context — resolve `/capabilities` once, hold the
+ * TODO: stand up the workspace context - resolve `/capabilities` once, hold the
  * auth header factory, bind the namespace, and expose it to the hooks and panes.
  */
 export function HarnessProvider(_props: HarnessProviderProps): ReactElement {
@@ -114,10 +109,10 @@ export interface BuilderProps {
 /**
  * The whole workspace: a resizable two-pane split of {@link ChatPane} and
  * {@link PreviewPane}, with an optional {@link FileExplorer} + {@link VersionTimeline}.
- * Owns the shared state contract — the `fileSig` rebuild key and the once-per-signature
- * crash-to-auto-fix guard — so the panes stay in sync.
+ * Owns the shared state contract - the `fileSig` rebuild key and the once-per-signature
+ * crash-to-auto-fix guard - so the panes stay in sync.
  *
- * TODO(v0.1): compose the panes over the shared workspace state (project, fileSig,
+ * TODO: compose the panes over the shared workspace state (project, fileSig,
  * snapshots, busy, chat imperative handle) with resizable panels and the layout prop.
  */
 export function Builder(_props: BuilderProps): ReactElement {
@@ -141,8 +136,8 @@ export interface ChatPaneProps {
  * model picker, and the composer with image/CSV attachment support. Talks the protocol
  * through {@link useHarnessChat}.
  *
- * TODO(v0.1): render `useHarnessChat` items — assistant text, tool cards paired by
- * index, the activity line — plus the composer, attachments, and plan-choice chips.
+ * TODO: render `useHarnessChat` items - assistant text, tool cards paired by
+ * index, the activity line - plus the composer, attachments, and plan-choice chips.
  */
 export function ChatPane(_props: ChatPaneProps): ReactElement {
   throw new Error(NOT_IMPLEMENTED);
@@ -161,7 +156,7 @@ export interface PreviewPaneProps {
  * readable fallback on build/runtime failure, and the once-per-build crash-to-auto-fix
  * request. Talks to the bundler through {@link useHarnessPreview}.
  *
- * TODO(v0.1): host the `@speculos-harness/preview` iframe core, wire the bridge to the
+ * TODO: host the `@speculos-harness/preview` iframe core, wire the bridge to the
  * mounted connectors, and surface the fallback + auto-fix hook.
  */
 export function PreviewPane(_props: PreviewPaneProps): ReactElement {
@@ -180,7 +175,7 @@ export interface FileExplorerProps {
  * The read-only file tree with per-turn diffs. Answers "what did the agent actually
  * change in my app?" without pretending to be an editor.
  *
- * TODO(v0.1): render the tree from `useHarnessFiles`, with per-turn diff highlighting.
+ * TODO: render the tree from `useHarnessFiles`, with per-turn diff highlighting.
  */
 export function FileExplorer(_props: FileExplorerProps): ReactElement {
   throw new Error(NOT_IMPLEMENTED);
@@ -199,7 +194,7 @@ export interface VersionTimelineProps {
  * shows the files it produced; restoring is itself undoable. Hides itself when the
  * server's `/capabilities` reports no snapshot support.
  *
- * TODO(v0.1): list snapshots from `useHarnessFiles().versions`, wire restore/undo.
+ * TODO: list snapshots from `useHarnessFiles().versions`, wire restore/undo.
  */
 export function VersionTimeline(_props: VersionTimelineProps): ReactElement {
   throw new Error(NOT_IMPLEMENTED);
@@ -237,7 +232,7 @@ export interface HarnessChat {
   stop: () => void;
   /** Whether a turn is streaming. */
   busy: boolean;
-  /** A string that changes whenever files were mutated — feed it to the preview as `rebuildKey`. */
+  /** A string that changes whenever files were mutated - feed it to the preview as `rebuildKey`. */
   filesChangedAt: string;
 }
 
@@ -245,7 +240,7 @@ export interface HarnessChat {
  * The chat protocol as a hook: opens the SSE stream, parses the seven events, pairs
  * tool cards by index, and exposes `filesChangedAt` (the `fileSig` contract).
  *
- * TODO(v0.1): POST `/chat` with a streaming fetch, hand-parse the SSE framing, maintain
+ * TODO: POST `/chat` with a streaming fetch, hand-parse the SSE framing, maintain
  * `items` and `filesChangedAt`, and expose optimistic send + abort.
  */
 export function useHarnessChat(_opts: UseHarnessChatOptions): HarnessChat {
@@ -268,8 +263,8 @@ export interface UseHarnessPreviewOptions {
   /** How to bundle: the HTTP sidecar, or a browser bundler. */
   bundle?: BundleFn;
   /**
-   * Called at most ONCE per `rebuildKey` when the preview fails to build or crashes —
-   * the once-per-signature guard lives inside the hook, so custom layouts cannot
+   * Called at most ONCE per `rebuildKey` when the preview fails to build or crashes.
+   * The once-per-signature guard lives inside the hook, so custom layouts cannot
    * accidentally build a fix loop.
    */
   onError?: (err: { message: string; stack?: string }) => void;
@@ -287,7 +282,7 @@ export interface HarnessPreview {
  * The preview as a hook: rebuilds on `rebuildKey`, assembles the srcdoc, owns the
  * bridge, and fires `onError` at most once per rebuild.
  *
- * TODO(v0.1): key a build effect on `${projectId}:${rebuildKey}`, call `bundle`, build
+ * TODO: key a build effect on `${projectId}:${rebuildKey}`, call `bundle`, build
  * the srcdoc via `@speculos-harness/preview`, and manage the bridge + auto-fix guard.
  */
 export function useHarnessPreview(_opts: UseHarnessPreviewOptions): HarnessPreview {
@@ -328,10 +323,10 @@ export interface HarnessFiles {
 
 /**
  * The read-only file explorer + version history as a hook: the tree, per-turn diffs,
- * the snapshot timeline, and restore — all read-only, backed by data that already flows
+ * the snapshot timeline, and restore - all read-only, backed by data that already flows
  * through the store.
  *
- * TODO(v0.1): fetch files and snapshots through the mounted router; compute per-turn
+ * TODO: fetch files and snapshots through the mounted router; compute per-turn
  * diffs from the message log; wire restore to `/rollback`.
  */
 export function useHarnessFiles(_opts: UseHarnessFilesOptions): HarnessFiles {

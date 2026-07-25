@@ -1,4 +1,4 @@
-# pnpm workspace — the TypeScript / npm side of the Speculos Harness monorepo.
+# pnpm workspace - the TypeScript / npm side of the Speculos Harness monorepo.
 # The Python package lives under py/ and is published to PyPI separately.
 #
 # Strict one-way dependency layering:

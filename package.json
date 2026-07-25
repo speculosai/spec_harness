@@ -1,17 +1,24 @@
 {
   "name": "speculos-harness",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
-  "description": "Monorepo root for Speculos Harness — an embeddable AI app-building workspace. Pre-release: code lands with v0.1.",
+  "description": "Monorepo root for Speculos Harness - an embeddable AI app-building workspace: a chat panel beside a live preview, in your own product.",
   "license": "Apache-2.0",
   "homepage": "https://speculos.ai",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/speculosai/spec_harness.git"
+  },
+  "bugs": {
+    "url": "https://github.com/speculosai/spec_harness/issues"
+  },
   "type": "module",
   "packageManager": "pnpm@9.0.0",
   "engines": {
     "node": ">=20"
   },
   "scripts": {
-    "build": "echo \"speculos-harness: builds arrive with the v0.1 code drop\" && exit 0",
-    "test": "echo \"speculos-harness: the conformance kit arrives with the v0.1 code drop\" && exit 0"
+    "build": "pnpm -r --if-present build",
+    "test": "pnpm -r --if-present test"
   }
 }

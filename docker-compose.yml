@@ -1,21 +1,20 @@
-# Speculos Harness — reference three-service stack.
-#
-# PRE-RELEASE: this compose file is the intended shape of the reference stack,
-# but the images and example builds it references do not exist yet. It becomes
-# runnable with the v0.1 code drop — at which point `docker compose up` will
-# bring up a working builder at http://localhost:5173. Until then it is here so
-# you can review the topology: three services, one command.
+# Speculos Harness - the reference three-service stack.
 #
 #   web     -> the React workspace (<Builder>), talks to the agent over the wire protocol
 #   agent   -> the mountable FastAPI router (the pip package speculos-harness)
 #   bundler -> the build service: {files, deps} in, {code, css} out
 #
-# See examples/minimal for the web + backend sources these services build from.
+# One command brings up a working builder at http://localhost:5173:
+#
+#   export ANTHROPIC_API_KEY=sk-ant-...   # any LiteLLM-supported provider works
+#   docker compose up
+#
+# See examples/minimal for the web and backend sources these services build from.
 
 services:
   bundler:
     # The locked-down build container: non-root, ephemeral build dir, installs
-    # run with --ignore-scripts. Published to a registry with the v0.1 drop.
+    # run with --ignore-scripts.
     image: speculos/harness-bundler
     ports:
       - "8081:8081"
@@ -24,8 +23,8 @@ services:
     # The Python agent kit mounted on a minimal FastAPI app.
     build: ./examples/minimal/backend
     environment:
-      # Provide one LLM key. Use an obvious placeholder in .env; never commit a real key.
-      - OPENAI_API_KEY=sk-your-key-here
+      # One LLM key, read from your shell or a .env file. Never commit a real key.
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-sk-ant-...}
       # Where the bundler sidecar lives, inside the compose network.
       - BUNDLER_URL=http://bundler:8081
     depends_on:
@@ -37,7 +36,7 @@ services:
     # The React workspace example. Points at the agent router (mounted at /api/builder).
     build: ./examples/minimal/web
     environment:
-      - HARNESS_BASE_URL=http://localhost:8000/api/builder
+      - HARNESS_BASE_URL=http://agent:8000/api/builder
     depends_on:
       - agent
     ports:

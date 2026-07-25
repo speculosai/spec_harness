@@ -1,9 +1,9 @@
 # Embedding
 
-The full frontend integration guide: how to put the workspace inside your
-product, control its layout, wire identity through it, style it to your design
-system, white-label it, embed it across origins, and offer read-only views. The
-backend side — models, the instructions brief, connectors, metering — is in
+The frontend integration guide: how to put the workspace inside your product,
+control its layout, wire identity through it, style it to your design system,
+white-label it, embed it across origins, and offer read-only views. The backend
+side - models, the instructions brief, connectors, metering - is in
 [Configuration](./configuration.md); this page is the browser half.
 
 Everything here is `@speculos-harness/react`. Its exact types live in that
@@ -38,7 +38,7 @@ import '@speculos-harness/react/styles.css'
 ### Identity: the `auth` prop
 
 `auth.getHeaders` is a factory the workspace calls before **every** request it
-makes — the chat SSE stream, the bundle call, project and snapshot reads, and the
+makes: the chat SSE stream, the bundle call, project and snapshot reads, and the
 preview's bridge-proxy data fetches. It returns the headers that identify the
 caller, so identity is attached uniformly rather than on the first request only.
 
@@ -54,7 +54,7 @@ auth={{
 |---|---|---|
 | `getHeaders` | `() => Promise<Record<string,string>> \| Record<string,string>` | Headers to attach to every request. Usually an `Authorization` bearer. |
 | `canEdit` | `boolean` | `false` yields a [read-only viewer](#read-only-viewers-canedit). |
-| `shareToken` | `string` | When set, threaded through every runtime RPC as `?token=` — for a shared, running app that fetches its own live data under a viewer's granted scope. |
+| `shareToken` | `string` | When set, threaded through every runtime RPC as `?token=`, for a shared, running app that fetches its own live data under a viewer's granted scope. The wire seam is part of protocol v1; the share-link UI and the token-minting endpoint are [on the core roadmap](../ROADMAP.md), so today you mint the token yourself. |
 
 `getHeaders` is the only place your token lives on the client. The backend turns
 that header back into a `Principal` (see [Adapters](./adapters.md)); the two
@@ -65,18 +65,18 @@ the connectors.
 
 `<Builder>` is a resizable two-pane split of the chat and the preview, with an
 optional read-only file explorer and version timeline. It owns the shared state
-that keeps the panes in sync — the rebuild key and the once-per-build crash-to-fix
-guard — so you never wire those up yourself.
+that keeps the panes in sync - the rebuild key and the once-per-build
+crash-to-fix guard - so you never wire those up yourself.
 
 | Prop | Type | Default | What it does |
 |---|---|---|---|
-| `projectId` | `string` | — | The project to open. |
+| `projectId` | `string` | - | The project to open. |
 | `layout` | `"preview-left" \| "chat-left"` | `"preview-left"` | Which side the preview sits on. Pane order is a prop, not a fork. |
 | `filePanel` | `"explorer" \| "hidden"` | `"explorer"` | Whether the read-only file tree, per-turn diffs, and version timeline show. |
-| `onFirstPrompt` | `() => string \| undefined` | — | Seeds the first turn. The `?prompt=` deep-link convention: return a value to open the workspace mid-thought. |
+| `onFirstPrompt` | `() => string \| undefined` | - | Seeds the first turn. The `?prompt=` deep-link convention: return a value to open the workspace mid-thought. |
 
-The `?prompt=` deep link is worth calling out — a URL like
-`/build?prompt=arrears+dashboard` can launch a user straight into a build:
+The `?prompt=` deep link is worth calling out - a URL like
+`/build?prompt=arrears+dashboard` launches a user straight into a build:
 
 ```tsx
 <Builder
@@ -88,14 +88,14 @@ The `?prompt=` deep link is worth calling out — a URL like
 ## The standalone panes
 
 The pieces `<Builder>` is made of are exported on their own, so you can put the
-chat in a drawer, the preview in a modal, and the versions in your own sidebar —
+chat in a drawer, the preview in a modal, and the versions in your own sidebar,
 and they keep talking to each other through the provider.
 
 | Component | What it is |
 |---|---|
 | `<ChatPane>` | The chat side: the message log with legible tool cards, plan-mode choice chips, the model picker, and the composer with image/CSV attachments. |
 | `<PreviewPane>` | The preview side: the null-origin sandboxed iframe, the postMessage bridge, the readable fallback, and the once-per-build auto-fix. |
-| `<FileExplorer>` | The read-only file tree with per-turn diffs. The trust view — "what did the agent actually change?" — not an editor. |
+| `<FileExplorer>` | The read-only file tree with per-turn diffs. The trust view - "what did the agent actually change?" - not an editor. |
 | `<VersionTimeline>` | Every turn as a restorable version (the last ~30), with undo. |
 
 ```tsx
@@ -114,7 +114,7 @@ and they keep talking to each other through the provider.
 
 ## Headless hooks
 
-For total control — your own layout, your own chrome — the hooks own the
+For total control - your own layout, your own chrome - the hooks own the
 protocol, the state, and the streaming. This is also the proof the core is
 genuinely headless: `<Builder>` is built on exactly these.
 
@@ -136,7 +136,7 @@ function CustomBuilder({ projectId }: { projectId: string }) {
 
   return (
     <div className="split">
-      <iframe srcDoc={preview.srcDoc} sandbox={preview.sandbox} />  {/* sandbox attrs come from the package — never hand-write them */}
+      <iframe srcDoc={preview.srcDoc} sandbox={preview.sandbox} />  {/* sandbox attrs come from the package - never hand-write them */}
       <MyChatUI items={chat.items} onSend={chat.send} busy={chat.busy} />
     </div>
   )
@@ -145,21 +145,21 @@ function CustomBuilder({ projectId }: { projectId: string }) {
 
 Two contracts the hooks encode so you cannot get them wrong:
 
-- **The rebuild key.** `chat.filesChangedAt` is a string that changes whenever the
-  agent mutated files. Feed it to `useHarnessPreview` as `rebuildKey`; a changed
-  value triggers one full rebuild. There is no HMR — a rebuild is a fast
+- **The rebuild key.** `chat.filesChangedAt` is a string that changes whenever
+  the agent mutated files. Feed it to `useHarnessPreview` as `rebuildKey`; a
+  changed value triggers one full rebuild. There is no HMR - a rebuild is a fast
   build-from-scratch keyed on that string.
 - **The once-per-rebuild auto-fix.** `useHarnessPreview` calls `onError` at most
   once per `rebuildKey`. The guard lives inside the hook, so a custom layout
   cannot accidentally build an infinite fix loop.
 
 And one you must not override: the `sandbox` attribute comes from the package
-(`preview.sandbox`). It is security-load-bearing and non-configurable — see
+(`preview.sandbox`). It is security-load-bearing and non-configurable - see
 [the sandbox rules](../spec/security.md).
 
 ## White-labeling: `brand` and `strings`
 
-The workspace can speak entirely in your product's language, without a fork.
+The workspace speaks entirely in your product's language, without a fork.
 
 ```tsx
 <HarnessProvider
@@ -167,24 +167,24 @@ The workspace can speak entirely in your product's language, without a fork.
   auth={{ getHeaders }}
   brand={{ name: 'Northwind', Logo: <NorthwindLogo /> }}
   strings={{
-    'composer.placeholder': 'Describe the view you need — e.g. "arrears by building, worst first"',
+    'composer.placeholder': 'Describe the view you need - e.g. "arrears by building, worst first"',
     'empty.title': 'Build a tool for Northwind',
   }}
 >
 ```
 
-- **`brand`** — `name` is the product name shown in the chrome; `Logo` is a slot
+- **`brand`** - `name` is the product name shown in the chrome; `Logo` is a slot
   that renders in place of the default mark. The logo is never hardcoded.
-- **`strings`** — a flat map of label keys to your copy, or a `t()`-style function
-  `(key, vars?) => string` if you already run an i18n library. Anything you do not
-  override falls back to the built-in English default, so you can translate one
-  label or all of them.
+- **`strings`** - a flat map of label keys to your copy, or a `t()`-style
+  function `(key, vars?) => string` if you already run an i18n library. Anything
+  you do not override falls back to the built-in English default, so you can
+  translate one label or all of them.
 
 ## Styling with CSS custom properties
 
 The default stylesheet (`@speculos-harness/react/styles.css`) is built on CSS
-custom properties. Override the tokens and the whole workspace adopts your design
-system — no forking, no `!important`, no shadow-DOM surgery.
+custom properties. Override the tokens and the whole workspace adopts your
+design system - no forking, no `!important`, no shadow-DOM surgery.
 
 ```css
 :root {
@@ -205,47 +205,52 @@ The tokens are grouped by color, radius, type, and spacing:
 | Spacing | `--harness-space-1` … `--harness-space-4` |
 
 The stylesheet ships a light and a dark set out of the box; override either by
-scoping your tokens under the matching selector. Note that the tokens style the
-**workspace chrome** — the chat, the panes, the explorer. The generated app
+scoping your tokens under the matching selector. The tokens style the
+**workspace chrome** - the chat, the panes, the explorer. The generated app
 inside the preview is styled by its own code (Tailwind by default); that is a
-separate surface, covered in [Configuration](./configuration.md#the-instructions-brief)
-where you point the agent at your design system.
+separate surface, covered in
+[Configuration](./configuration.md#the-instructions-brief) where you point the
+agent at your design system.
 
 ## Read-only viewers: `canEdit`
 
-Set `auth.canEdit: false` and the workspace renders as a viewer: the preview goes
-full-width and the chat composer is gone. The reader sees the running app and can
-browse the file explorer and version history, but cannot start a turn.
+Set `auth.canEdit: false` and the workspace renders as a viewer: the preview
+goes full-width and the chat composer is gone. The reader sees the running app
+and can browse the file explorer and version history, but cannot start a turn.
 
 ```tsx
-auth={{ getHeaders, canEdit: user.role === 'viewer' ? false : true }}
+auth={{ getHeaders, canEdit: user.role !== 'viewer' }}
 ```
 
-This is a client-side affordance; it is not the security boundary. The boundary
-is the backend `Principal.canEdit`, which the router enforces — a viewer whose
-token resolves to `canEdit: false` cannot mutate the project even if they call the
-API directly. Set both: the client one hides the composer, the server one refuses
-the write. See [Adapters](./adapters.md#authprovider) for the server half.
+This is a client-side affordance, not the security boundary. The boundary is the
+backend `Principal.can_edit`, which the router enforces: a viewer whose token
+resolves to `can_edit: False` cannot mutate the project even if they call the
+API directly. Set both - the client one hides the composer, the server one
+refuses the write. See [Adapters](./adapters.md#authprovider) for the server
+half.
 
 For a shared, running app that still needs to fetch its own live data, pair a
 read-only viewer with `auth.shareToken`; the token is threaded through every
 runtime RPC so the app renders real data under the viewer's granted scope, while
-the sandbox still never holds a credential. Share-token semantics — including the
-plain truth that the token *is* the credential — are in
+the sandbox still never holds a credential. The threading is protocol v1 and the
+client honours it today - what is [on the core roadmap](../ROADMAP.md) is the
+share-link UI and the endpoint that mints the token, so for now your host mints
+it and hands it in. Share-token semantics - including
+the plain truth that the token *is* the credential - are in
 [`spec/security.md`](../spec/security.md).
 
 ## Cross-origin embedding
 
-Dropping `<Builder>` into a product served from a different origin than the agent
-is a first-class, supported path. There are two auth modes; the difference is
-entirely about how credentials cross the origin boundary.
+Dropping `<Builder>` into a product served from a different origin than the
+agent is a first-class, supported path. There are two auth modes; the difference
+is entirely about how credentials cross the origin boundary.
 
 ### Bearer mode (recommended for cross-origin)
 
 `auth.getHeaders` attaches an `Authorization` header and the client sends
 `credentials: 'omit'`. No cookies cross the boundary, so third-party-cookie
-problems never arise. This is the default for cross-origin embeds, and the one to
-reach for.
+problems never arise. This is the default for cross-origin embeds, and the one
+to reach for.
 
 ```tsx
 auth={{
@@ -262,27 +267,27 @@ The client sends `credentials: 'include'`. Cross-origin, this additionally
 requires:
 
 - cookies set `SameSite=None; Secure`, and
-- a **per-origin CORS allowlist** on the server that echoes the specific embedding
-  origin with `Access-Control-Allow-Credentials: true`.
+- a **per-origin CORS allowlist** on the server that echoes the specific
+  embedding origin with `Access-Control-Allow-Credentials: true`.
 
 The load-bearing rule: **`Access-Control-Allow-Origin: *` is incompatible with
 credentialed requests.** A server configured for cookie mode with a wildcard
 origin refuses to start rather than shipping an embed that fails silently in the
-browser. If your cross-origin cookie embed "just doesn't work," this is almost
-always why.
+browser. If your cross-origin cookie embed does not work, this is almost always
+why.
 
 ### The cross-origin checklist
 
 1. **Prefer bearer mode.** It sidesteps the cookie machinery entirely.
 2. **If you must use cookies**, set `SameSite=None; Secure` and an explicit
-   per-origin CORS allowlist — never `*` with credentials.
-3. **Thread auth through everything.** The client already attaches your configured
-   credentials to the chat SSE, the bundle call, project/snapshot reads, and every
-   preview bridge-proxy fetch — not just the first request. You get this for free
-   by configuring `auth` once.
+   per-origin CORS allowlist - never `*` with credentials.
+3. **Thread auth through everything.** The client attaches your configured
+   credentials to the chat SSE, the bundle call, project and snapshot reads, and
+   every preview bridge-proxy fetch, not just the first request. You get this by
+   configuring `auth` once.
 4. **Keep the namespace consistent** across the provider, the server, and the
-   generated apps. A mismatch is a silent-no-data bug, not a security hole, but it
-   is the most common integration failure.
+   generated apps. A mismatch is a silent-no-data bug, not a security hole, but
+   it is the most common integration failure.
 5. **Serve the preview head under your CSP.** The default styling loads Tailwind
    from a CDN; a strict-CSP host supplies an inlined stylesheet instead (see
    [`spec/bundle.md`](../spec/bundle.md) and
@@ -293,11 +298,11 @@ The end-to-end recipe, with the reasoning, is in
 
 ## What the client adapts to on its own
 
-You do not hand the client a list of what your backend supports. On mount it calls
-`GET {baseUrl}/capabilities` once and adapts: it hides the model picker when the
-server advertises no models, hides on-demand installs against a browser bundler,
-hides plan mode when the server does not offer it, and degrades any unlisted
-connector to a never-throw stub. If that endpoint 404s, the client assumes
-protocol-1 defaults and carries on. You get correct UI against any conforming
-backend without per-server client code. The full field list is in
+You do not hand the client a list of what your backend supports. On mount it
+calls `GET {baseUrl}/capabilities` once and adapts: it hides the model picker
+when the server advertises no models, hides on-demand installs against a browser
+bundler, hides plan mode when the server does not offer it, and degrades any
+unlisted connector to a never-throw stub. If that endpoint 404s, the client
+assumes protocol-1 defaults and carries on. You get correct UI against any
+conforming backend without per-server client code. The full field list is in
 [`spec/capabilities.md`](../spec/capabilities.md).

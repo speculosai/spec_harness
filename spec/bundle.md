@@ -2,7 +2,7 @@
 
 The bundler turns a project's files and dependencies into browser-ready code and
 CSS: `{files, deps}` in, `{code, css}` out. The workspace calls it on every file
-change, which is what makes the preview feel live — the agent writes a file, the
+change, which is what makes the preview feel live - the agent writes a file, the
 service rebuilds, the sandbox refreshes, and there is no "run" button anywhere.
 
 There are two contracts here: the **proxy endpoint** on the agent router, which a
@@ -27,8 +27,8 @@ projects, or connectors.
   { "error": "Build failed: Unexpected token in /App.tsx:42" }
   ```
 
-The proxy loads the project's files from the store, calls the raw sidecar, and —
-on success — attaches an optional `connectors` summary describing which data
+The proxy loads the project's files from the store, calls the raw sidecar, and -
+on success - attaches an optional `connectors` summary describing which data
 sources the app uses and what the client's in-frame shim should expose. That
 summary is computed from the mounted connectors scoped to the caller's principal
 plus a static scan of the files; its exact shape (`ConnectorSummary`) is
@@ -42,7 +42,7 @@ result.
 ## Raw sidecar contract (bundler container)
 
 The bundler container exposes two endpoints and nothing else. It has no auth, no
-database, and no knowledge of projects — it is handed files and returns bytes.
+database, and no knowledge of projects - it is handed files and returns bytes.
 
 ### Bundle
 
@@ -97,13 +97,16 @@ client through [`/capabilities`](./capabilities.md):
   "jsxRuntime": "automatic" } // "automatic" | "classic"
 ```
 
-- **`location`** — `server` for the container sidecar; `browser` for the optional
-  in-browser bundler (a post-v0.1 fast-follow). A client uses this to decide, for
-  example, whether the `install_package` tool is meaningful at all.
-- **`supportsInstall`** — whether the bundler can install packages. A browser
+- **`location`** - `server` for the container sidecar; `browser` for the optional
+  in-browser bundler. A client uses this to decide, for example, whether the
+  `install_package` tool is meaningful at all. The in-browser bundler is a core
+  roadmap item: it advertises `browser` only once a shared bundler conformance
+  suite proves it matches the server bundler's output, and `/capabilities`
+  advertises `server` until then.
+- **`supportsInstall`** - whether the bundler can install packages. A browser
   bundler that resolves imports from a CDN advertises `false`, and the client
   hides on-demand installs accordingly.
-- **`jsxRuntime`** — which JSX transform the bundler uses, so a browser bundler
+- **`jsxRuntime`** - which JSX transform the bundler uses, so a browser bundler
   can be wired to match the server bundler's output.
 
 The reason this descriptor exists is that two bundlers can differ in ways that
@@ -115,7 +118,7 @@ guessing.
 ## The baked base dependency set
 
 The bundler image ships with a base set of dependencies already installed, so the
-most common apps build with **zero** install round-trips. The v0.1 baked set is:
+most common apps build with **zero** install round-trips. The baked set is:
 
 | Package | Purpose |
 |---|---|
@@ -128,21 +131,21 @@ most common apps build with **zero** install round-trips. The v0.1 baked set is:
 This set is not arbitrary: it is exactly what the agent's system prompt promises
 it may use without asking. The prompt's libraries block and the image's baked set
 are generated from **one list**, and a startup self-check asserts every promised
-package actually resolves — so the agent can never be told it has a library the
+package actually resolves - so the agent can never be told it has a library the
 bundler can't find. Anything outside this set is added on demand via
 `install_package` (when `supportsInstall` is true).
 
 ## Security-load-bearing invariants
 
 The bundler runs a build against real npm packages, on a machine that may hold
-secrets. Two invariants are not conveniences — they are the difference between a
+secrets. Two invariants are not conveniences - they are the difference between a
 build service and a remote-code-execution hole, and the reference container's
 startup self-check refuses to run if either is violated. Both are stated again in
 [security.md](./security.md).
 
 - **`--ignore-scripts` is mandatory, always.** `npm`/`bun` install lifecycle
   scripts are arbitrary code that runs at install time. Installing a
-  model-chosen (therefore untrusted — see the prompt-injection note in
+  model-chosen (therefore untrusted - see the prompt-injection note in
   [security.md](./security.md)) package **without** `--ignore-scripts` hands that
   package code execution on the build host. The flag is never optional and never
   configurable away.

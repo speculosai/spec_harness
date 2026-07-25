@@ -2,7 +2,7 @@
 
 The preview runs the agent's generated app in an isolated iframe next to the
 chat. Because that iframe holds code written by an AI from untrusted input, it is
-deliberately given **no origin and no same-origin privileges** — which means it
+deliberately given **no origin and no same-origin privileges** - which means it
 cannot fetch data on its own. Everything it needs from the outside world travels
 over a `postMessage` bridge to the parent page, which is the only place a
 credential ever exists. This document specifies that iframe, that bridge, and the
@@ -13,10 +13,10 @@ credential ever exists. This document specifies that iframe, that bridge, and th
 The preview is a full HTML document assembled by the client and set as the
 iframe's `srcdoc`. Setting `srcdoc` (rather than pointing `src` at a URL) gives
 the frame a **null origin**: it belongs to no site, shares nothing with the host
-page, and — critically — cannot read the host's cookies, `localStorage`, or DOM.
+page, and - critically - cannot read the host's cookies, `localStorage`, or DOM.
 
 A null-origin frame also cannot make same-origin `fetch` calls succeed, and that
-is not a limitation to work around — it is the point. Because the frame can't
+is not a limitation to work around - it is the point. Because the frame can't
 fetch anything directly, **all** data access is forced through the parent-mediated
 bridge, where the host controls and scopes every request and where the
 credentials live. Remove the null origin and you remove the entire security
@@ -40,7 +40,7 @@ This string is security-load-bearing and non-configurable. Two omissions are
 **normative MUST-NOTs**:
 
 - **`allow-same-origin` MUST NOT be present.** Adding it gives the frame the
-  parent's origin — its cookies, its storage, its DOM — and collapses the entire
+  parent's origin - its cookies, its storage, its DOM - and collapses the entire
   isolation model. The frame's null origin is *why* the bridge exists. A startup
   self-check in the reference implementation refuses to run if the configured
   sandbox string ever contains `allow-same-origin`.
@@ -81,7 +81,7 @@ and every request carries an `id` the reply echoes.
 
 The parent posts the reply back with the **same `id`**, so the in-frame caller
 can resolve the exact pending promise. The parent MUST post with
-`targetOrigin = origin === 'null' ? '*' : origin` — because the frame's origin is
+`targetOrigin = origin === 'null' ? '*' : origin` - because the frame's origin is
 the literal string `'null'`, `postMessage` will not accept it as a concrete
 target, so `'*'` is used for the null-origin case and the real origin otherwise.
 
@@ -93,7 +93,7 @@ target, so `'*'` is used for the null-origin case and the real origin otherwise.
 
 The frame's error-capture script posts `preview-error` when the app throws at
 runtime (and the build path reports a build failure the same way). The parent
-surfaces a readable fallback and — at most once per rebuild key — asks the agent
+surfaces a readable fallback and - at most once per rebuild key - asks the agent
 to read the files and repair the error. `stack` is optional.
 
 ### Correlation, timeouts, and never-throw stubs
@@ -101,10 +101,10 @@ to read the files and repair the error. `stack` is optional.
 - **Correlation.** Each request's `id` maps to a pending promise in the frame; the
   matching `<ns>-result` resolves it. Unmatched replies are ignored.
 - **60-second timeout.** Every request times out at 60s. A timed-out call
-  resolves to an error result — it never hangs the app forever.
+  resolves to an error result - it never hangs the app forever.
 - **Never-throw stubs for unknown connectors.** The in-frame `window.<ns>` object
   is a `Proxy`: asking it for a connector the server didn't mount returns a stub
-  that resolves to a shaped empty result rather than throwing —
+  that resolves to a shaped empty result rather than throwing -
   `{ rows: [], error }` for row-shaped calls, `{ data: null, error }` for
   object-shaped calls. A generated app that references a connector which happens
   not to be configured renders with empty data instead of crashing the whole
@@ -115,8 +115,8 @@ to read the files and repair the error. `stack` is optional.
 
 The **envelope, the correlation ids, the 60-second timeout, the `preview-error`
 channel, and the never-throw stub behavior are core** and specified here. The
-individual connector **kinds** — `<ns>-query`, `<ns>-app`, `<ns>-mcp`, and the
-`<ns>-task-*` / `<ns>-kv-*` families — are contributed by connector plugins, not
+individual connector **kinds** - `<ns>-query`, `<ns>-app`, `<ns>-mcp`, and the
+`<ns>-task-*` / `<ns>-kv-*` families - are contributed by connector plugins, not
 by protocol v1. A connector plugin supplies both halves: the parent-side
 `handle(kind, payload, ctx)` (which the bridge forwards to
 `POST {base}/connectors/{kind}`) and the in-frame `shim(...)` contribution that
@@ -132,10 +132,10 @@ deployment.
 
 The namespace is bound in **three** places, and they must agree exactly:
 
-1. **The system prompt** — what the agent is told to call
+1. **The system prompt** - what the agent is told to call
    (`window.app.query(...)`, etc.).
-2. **The generated app code** — what the agent actually writes.
-3. **The preview bridge** — what the parent listens for and replies to.
+2. **The generated app code** - what the agent actually writes.
+3. **The preview bridge** - what the parent listens for and replies to.
 
 If these three disagree, the failure is quiet and nasty: the preview loads fine,
 the app renders, and every data call silently returns nothing, because the
@@ -157,7 +157,7 @@ is styled and satisfy its own content-security policy.
 
 - **Default: Tailwind via CDN.** The default head loads Tailwind from a CDN
   script, which is why generated apps can use utility classes with no build step.
-  This external dependency is called out in [security.md](./security.md) — a host
+  This external dependency is called out in [security.md](./security.md) - a host
   with a strict CSP or an offline requirement cannot load it.
 - **Inline option for CSP hosts.** A host that cannot allow a CDN script supplies
   an inlined or precompiled stylesheet as `headHtml` instead. The rest of the

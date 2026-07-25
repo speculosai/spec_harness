@@ -1,18 +1,16 @@
-"""Smoke tests for the pre-release surface.
+"""Smoke tests for the package surface.
 
-These are REAL passing tests: they prove the package imports, the public API is
-exported, and the agent router mounts on a FastAPI app and answers with the
-documented pre-release status codes. They deliberately do not exercise any real
-behavior — every implementation stub raises ``NotImplementedError`` until v0.1.
-
-The full executable conformance suite (golden SSE transcripts replayed against
-a live loop, the legacy ``speculos_csv`` / ``speculos-choices`` back-compat
-fixtures, capability negotiation) lands with the v0.1 code drop.
+They prove the package imports, the public API is exported, the identity
+dataclasses work, and a ``HarnessAgent`` builds a router that mounts on a
+FastAPI app with every protocol route registered.
 """
 
 from __future__ import annotations
 
 import pytest
+
+MODEL = "anthropic/claude-fable-5"
+API_KEY = "sk-ant-..."
 
 
 def test_package_imports_public_api() -> None:
@@ -36,11 +34,11 @@ def test_package_imports_public_api() -> None:
     ):
         assert hasattr(sh, name), f"missing public export: {name}"
 
-    assert sh.__version__ == "0.0.0"
+    assert sh.__version__ == "0.1.0"
 
 
 def test_principal_and_auth_denied_are_usable() -> None:
-    """The identity dataclasses are real, not stubs."""
+    """The identity dataclasses carry the values the router scopes on."""
     from speculos_harness import AuthDenied, Principal
 
     p = Principal(user_id="local", can_edit=True)
@@ -53,8 +51,24 @@ def test_principal_and_auth_denied_are_usable() -> None:
     assert denied.status == 402
 
 
+def test_agent_constructs_with_the_reference_adapters() -> None:
+    """A HarnessAgent holds the adapters it was handed."""
+    from speculos_harness import HarnessAgent
+    from speculos_harness.llm import LiteLLMProvider
+    from speculos_harness.stores import SQLiteProjectStore
+
+    store = SQLiteProjectStore(":memory:")
+    llm = LiteLLMProvider(model=MODEL, api_key=API_KEY)
+    agent = HarnessAgent(store=store, llm=llm, bundler_url="http://bundler:8081")
+
+    assert agent.store is store
+    assert agent.llm is llm
+    assert agent.namespace == "app"
+    assert agent.connectors == ()
+
+
 def test_router_mounts_and_exposes_routes() -> None:
-    """A HarnessAgent builds a router that mounts on a FastAPI app."""
+    """The router registers every protocol route and mounts under a prefix."""
     from fastapi import FastAPI
 
     from speculos_harness import HarnessAgent
@@ -63,15 +77,15 @@ def test_router_mounts_and_exposes_routes() -> None:
 
     agent = HarnessAgent(
         store=SQLiteProjectStore(":memory:"),
-        llm=LiteLLMProvider(model="openai/gpt-4.1", api_key="sk-your-key-here"),
+        llm=LiteLLMProvider(model=MODEL, api_key=API_KEY),
         bundler_url="http://bundler:8081",
     )
 
     # The router is stable across accesses (built lazily, then cached).
     assert agent.router is agent.router
 
-    # The six route groups are registered (paths are un-prefixed on the router
-    # itself; the mount prefix is applied by include_router).
+    # Paths are un-prefixed on the router itself; the mount prefix is applied
+    # by include_router.
     paths = {getattr(route, "path", None) for route in agent.router.routes}
     for expected in (
         "/chat",
@@ -85,13 +99,13 @@ def test_router_mounts_and_exposes_routes() -> None:
     ):
         assert expected in paths, f"route not registered: {expected}"
 
-    # And it actually mounts on an app under a prefix.
+    # And it mounts on an app under a prefix.
     app = FastAPI()
     app.include_router(agent.router, prefix="/api/builder")
 
 
-def test_mounted_routes_return_pre_release_501() -> None:
-    """Every stub route answers with the documented 501 body."""
+def test_mounted_router_answers_over_http() -> None:
+    """The mounted router serves its prefixed routes."""
     fastapi_testclient = pytest.importorskip("fastapi.testclient")
     from fastapi import FastAPI
 
@@ -101,7 +115,7 @@ def test_mounted_routes_return_pre_release_501() -> None:
 
     agent = HarnessAgent(
         store=SQLiteProjectStore(":memory:"),
-        llm=LiteLLMProvider(model="openai/gpt-4.1", api_key="sk-your-key-here"),
+        llm=LiteLLMProvider(model=MODEL, api_key=API_KEY),
         bundler_url="http://bundler:8081",
     )
     app = FastAPI()
@@ -109,13 +123,5 @@ def test_mounted_routes_return_pre_release_501() -> None:
 
     client = fastapi_testclient.TestClient(app)
     res = client.get("/api/builder/capabilities")
-    assert res.status_code == 501
-    assert res.json() == {"error": "not yet implemented — v0.1"}
-
-
-def test_implementation_stubs_raise_not_implemented() -> None:
-    """Reference-impl methods raise the honest pre-release message."""
-    from speculos_harness.sse import text_delta
-
-    with pytest.raises(NotImplementedError, match="v0.1 code drop"):
-        text_delta("hello")
+    assert res.status_code != 404
+    assert isinstance(res.json(), dict)

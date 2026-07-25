@@ -4,13 +4,6 @@
  * The single source of truth for the Speculos Harness wire contract and the
  * adapter interfaces both the React client and the Python agent kit implement.
  *
- * Unlike every other package in this repository, the contents of this file are
- * NOT stubs. Types are the one thing published in full pre-release: a third
- * party can read them today to shape the v0.1 code drop while the contract is
- * still soft. The runtime helpers a full protocol package will also ship —
- * zod schemas, JSON-Schema emission, and the golden-fixture conformance kit —
- * arrive with v0.1; this file carries the frozen TypeScript shapes.
- *
  * Layering: this package depends on nothing. Adapters depend only on it.
  *
  * Wire protocol version: 1. Requests and responses carry a `Harness-Protocol: 1`
@@ -28,7 +21,7 @@ export const PROTOCOL_VERSION = 1 as const;
 export const PROTOCOL_HEADER = 'Harness-Protocol' as const;
 
 /**
- * The iframe `sandbox` attribute for the preview — normative, security-load-bearing,
+ * The iframe `sandbox` attribute for the preview - normative, security-load-bearing,
  * and non-configurable. The frame is null-origin: `allow-same-origin` MUST NOT be
  * added (that omission is *why* the postMessage data bridge exists), and ungated
  * `allow-top-navigation` MUST NOT be added. A startup self-check refuses to run if
@@ -178,7 +171,7 @@ export interface ImagePart {
 /**
  * The one custom content part: a CSV attachment. Emitted with `type:
  * 'attachment_csv'`; readers MUST also accept the legacy `speculos_csv` tag
- * indefinitely (it lives in already-persisted history) — see {@link LEGACY_CSV_PART}.
+ * indefinitely (it lives in already-persisted history) - see {@link LEGACY_CSV_PART}.
  */
 export interface AttachmentCsvPart {
   /** Discriminant on write. Readers also accept `'speculos_csv'`. */
@@ -268,7 +261,7 @@ export interface ChatRequest {
 }
 
 /* ------------------------------------------------------------------------- *
- * Chat response — the seven SSE events
+ * Chat response - the seven SSE events
  * ------------------------------------------------------------------------- */
 
 /**
@@ -283,7 +276,7 @@ export interface ToolResultOutput {
 }
 
 /**
- * `user-message` — the server echoes the user's text. Client MUST ignore it: the
+ * `user-message` - the server echoes the user's text. Client MUST ignore it: the
  * user bubble was already rendered optimistically. Reimplementers who echo it
  * double-render.
  */
@@ -294,7 +287,7 @@ export interface UserMessageEvent {
   data: { text: string };
 }
 
-/** `text-delta` — append `text` to the trailing assistant bubble. */
+/** `text-delta` - append `text` to the trailing assistant bubble. */
 export interface TextDeltaEvent {
   /** SSE `event:` name. */
   event: 'text-delta';
@@ -303,7 +296,7 @@ export interface TextDeltaEvent {
 }
 
 /**
- * `tool-call-delta` — stream argument text into a pending tool card keyed by
+ * `tool-call-delta` - stream argument text into a pending tool card keyed by
  * `index` (the id and name are not yet known at this point).
  */
 export interface ToolCallDeltaEvent {
@@ -314,7 +307,7 @@ export interface ToolCallDeltaEvent {
 }
 
 /**
- * `tool-call` — finalize/pair the card. The client pairs by canonicalized-args
+ * `tool-call` - finalize/pair the card. The client pairs by canonicalized-args
  * equality, then first-pending, and sets it `pending`.
  */
 export interface ToolCallEvent {
@@ -325,7 +318,7 @@ export interface ToolCallEvent {
 }
 
 /**
- * `tool-result` — resolve the card. `ok = output.ok !== false`. If `ok` and `name`
+ * `tool-result` - resolve the card. `ok = output.ok !== false`. If `ok` and `name`
  * is a mutating tool ({@link MUTATING_TOOLS}), the client bumps `fileSig` and the
  * preview rebuilds.
  */
@@ -336,7 +329,7 @@ export interface ToolResultEvent {
   data: { toolCallId: string; name: string; output: ToolResultOutput };
 }
 
-/** `error` — render a friendly error bubble. */
+/** `error` - render a friendly error bubble. */
 export interface ErrorEvent {
   /** SSE `event:` name. */
   event: 'error';
@@ -345,7 +338,7 @@ export interface ErrorEvent {
 }
 
 /**
- * `done` — advisory end marker. The stream actually ends on reader EOF; clients
+ * `done` - advisory end marker. The stream actually ends on reader EOF; clients
  * must not depend on receiving this event.
  */
 export interface DoneEvent {
@@ -356,7 +349,7 @@ export interface DoneEvent {
 }
 
 /**
- * The complete, closed set of chat SSE events. Exactly seven — a conforming server
+ * The complete, closed set of chat SSE events. Exactly seven - a conforming server
  * emits only these, hand-rolled as `event: <name>\n` + `data: <json>\n\n` (not the
  * Vercel AI SDK data-stream protocol).
  */
@@ -416,12 +409,13 @@ export interface LLMCallConfig {
   extra?: Record<string, unknown>;
 }
 
-/** The task an optional model router is choosing a model for. */
+/** The task a model router is choosing a model for. */
 export type RouteTask = 'plan' | 'build' | 'analyze';
 
 /**
  * SERVER adapter. Wraps whatever LLM/gateway the host uses. The default reference
- * implementation is LiteLLM-backed (OpenAI/Anthropic/Bedrock/Ollama via config).
+ * implementation is LiteLLM-backed, so any LiteLLM-supported provider works from
+ * configuration alone. Inference is billed by that provider, on your keys, no markup.
  */
 export interface LLMProvider {
   /**
@@ -435,7 +429,7 @@ export interface LLMProvider {
 
   /**
    * Stream a completion.
-   * @param tools the offered tools, or `null` in plan mode — MUST be `null`, never
+   * @param tools the offered tools, or `null` in plan mode - MUST be `null`, never
    *   `[]` (Bedrock rejects an empty tools array).
    * @param signal aborts the stream.
    */
@@ -450,10 +444,12 @@ export interface LLMProvider {
   isContextWindowError(err: unknown): boolean;
 
   /**
-   * OPTIONAL, post-v0.1 fast-follow: dynamic model routing. Consulted only when the
-   * user has not explicitly picked a model; an explicit per-turn `model` always wins,
-   * the routed choice must come from {@link allowedModels}, and `/capabilities`
-   * advertises `routing: true`.
+   * OPTIONAL. The seam a dynamic model-routing policy plugs into, and it is yours to
+   * implement. Consulted only when the user has not explicitly picked a model: an
+   * explicit per-turn `model` always wins, the routed choice must come from
+   * {@link allowedModels}, and `/capabilities` advertises `routing: true` when a
+   * policy is mounted. Speculos's ready-made routing policy is a closed-beta module
+   * (https://speculos.ai/enterprise); the hook itself is open source.
    */
   routeFor?(ctx: { task: RouteTask; principal: Principal }): string | undefined;
 }
@@ -462,7 +458,7 @@ export interface LLMProvider {
  * Sandbox / bundler
  * ------------------------------------------------------------------------- */
 
-/** A project's files: absolute-in-project path → source. e.g. `"/index.tsx" → "..."`. */
+/** A project's files: absolute-in-project path -> source. e.g. `"/index.tsx" -> "..."`. */
 export type FileMap = Record<string, string>;
 
 /** The result of a bundle: `{code, css}` on success (200) or `{error}` (422). */
@@ -513,7 +509,7 @@ export interface Project {
   template: string;
   /** The current file map; may be omitted from list responses. */
   files?: FileMap;
-  /** Declared dependencies: name → version range. */
+  /** Declared dependencies: name -> version range. */
   dependencies: Record<string, string>;
   /** The persisted conversation. */
   messages: ChatMessage[];
@@ -560,9 +556,9 @@ export interface Snapshot {
  * OPTIONAL: when a store omits them, `/capabilities` omits snapshot support and the
  * version timeline / rollback UI hides itself. Both reference stores implement them.
  *
- * Landmine encoded in the signatures: {@link putFiles} is FULL-REPLACE and
- * transactional, and snapshots are owned by the *agent*, not the store — so a naive
- * adapter cannot silently corrupt a project.
+ * Encoded in the signatures: {@link putFiles} is FULL-REPLACE and transactional, and
+ * snapshots are owned by the *agent*, not the store - so a naive adapter cannot
+ * silently corrupt a project.
  */
 export interface ProjectStore {
   /** Fetch a project by id, or `null`. */
@@ -616,8 +612,7 @@ export interface ToolContext {
 
 /**
  * A single agent tool: schema, availability, prompt fragment, and executor
- * co-located so a tool and its prompt move as one unit (they historically drifted
- * when smeared across three sites).
+ * co-located so a tool and its prompt move as one unit.
  */
 export interface AgentTool<A = any> {
   /** The tool name the model calls. */
@@ -631,7 +626,7 @@ export interface AgentTool<A = any> {
   /** Text injected into the system prompt (the tool carries its own prompt lines). */
   promptFragment?(ctx: ToolContext): string;
   /** Execute the tool. Success convention: the returned `ok !== false`. */
-  execute(args: A, ctx: ToolContext): Promise<{ ok: boolean; [key: string]: unknown }>;
+  execute(args: A, ctx: ToolContext): Promise<ToolResultOutput>;
 }
 
 /* ------------------------------------------------------------------------- *
@@ -669,6 +664,8 @@ export interface RuntimeContext {
  * can call, the system-prompt lines it contributes, the parent-side RPC handler,
  * and the in-iframe resolver shim. Reference implementations: MCP and Postgres,
  * exposed as the factories `mcp_connector(url=...)` / `postgres_connector(dsn=...)`.
+ * The wider governed catalog is a closed-beta module (https://speculos.ai/enterprise);
+ * this interface is open, so anyone can write their own.
  */
 export interface ConnectorProvider {
   /** Summarize the connector for the chip UI and prompt context, scoped to the caller. */
@@ -677,7 +674,7 @@ export interface ConnectorProvider {
   detectUsed?(files: FileMap): string[];
   /** OPTIONAL. The agent tools this connector adds (e.g. `list_tables`, `call_app_tool`). */
   tools?(): AgentTool[];
-  /** Parent side of the `window.<ns>` RPC — invoked by `POST {base}/connectors/{kind}`. */
+  /** Parent side of the `window.<ns>` RPC - invoked by `POST {base}/connectors/{kind}`. */
   handle(kind: string, payload: unknown, ctx: RuntimeContext): Promise<unknown>;
   /** OPTIONAL. In-iframe resolver contribution injected into the preview shim. */
   shim?(summary: ConnectorSummary, ns: string): string;
@@ -804,7 +801,7 @@ export interface Capabilities {
   models: string[];
   /** The active connector kinds. */
   connectors: string[];
-  /** Present and `true` when dynamic model routing is enabled. */
+  /** Present and `true` when a routing policy is mounted on {@link LLMProvider.routeFor}. */
   routing?: boolean;
 }
 

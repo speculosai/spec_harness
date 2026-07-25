@@ -1,21 +1,21 @@
-# Minimal Speculos Harness stack — three services, one command.
+# Minimal Speculos Harness stack - three services, one command.
 #
 # This is the same topology as the repo-root docker-compose.yml, scoped to the
-# minimal example's sources. `docker compose up` from this directory brings up:
+# minimal example's sources. From this directory:
+#
+#   export ANTHROPIC_API_KEY=sk-ant-...   # any LiteLLM-supported provider works
+#   docker compose up
+#
+# brings up a working builder at http://localhost:5173:
 #
 #   web     -> the React workspace (./web), the <Builder> embed
 #   agent   -> the mountable FastAPI router (./backend/main.py)
 #   bundler -> the build service: {files, deps} in, {code, css} out
-#
-# PRE-RELEASE: the bundler image and the example builds referenced here do not
-# exist yet. This file is the intended shape of the stack; it becomes runnable
-# with the v0.1 code drop, at which point `docker compose up` opens a working
-# builder at http://localhost:5173.
 
 services:
   bundler:
     # The locked-down build container: non-root, ephemeral build dir, installs
-    # run with --ignore-scripts. Published to a registry with the v0.1 drop.
+    # run with --ignore-scripts.
     image: speculos/harness-bundler
     ports:
       - "8081:8081"
@@ -23,10 +23,11 @@ services:
   agent:
     # The Python agent kit mounted on this example's FastAPI app.
     build: ./backend
-    env_file:
-      # Copy backend/.env.example to backend/.env and fill in your key.
-      - ./backend/.env
     environment:
+      # One LLM key, read from your shell or a .env file beside this compose
+      # file. Never commit a real key.
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-sk-ant-...}
+      - HARNESS_MODEL=${HARNESS_MODEL:-anthropic/claude-fable-5}
       # Where the bundler sidecar lives, inside the compose network.
       - BUNDLER_URL=http://bundler:8081
     depends_on:
@@ -39,7 +40,10 @@ services:
     # /api/builder on the agent service).
     build: ./web
     environment:
-      - HARNESS_BASE_URL=http://localhost:8000/api/builder
+      # The agent router as seen from inside the compose network. The web dev
+      # server proxies /api/builder there, so the page and the API share an
+      # origin in the browser.
+      - HARNESS_BASE_URL=http://agent:8000/api/builder
     depends_on:
       - agent
     ports:

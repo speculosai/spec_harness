@@ -1,7 +1,7 @@
 {
   "name": "@speculos-harness/sandbox-browser",
-  "version": "0.0.0",
-  "description": "Optional in-browser bundler for Speculos Harness (esbuild-wasm + CDN resolution) — a post-v0.1 fast-follow for a Bun-less, frontend-only preview path.",
+  "version": "0.1.0",
+  "description": "Optional in-browser bundler for Speculos Harness (esbuild-wasm + CDN resolution) - a Bun-less, frontend-only preview path.",
   "license": "Apache-2.0",
   "homepage": "https://speculos.ai",
   "type": "module",

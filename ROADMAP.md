@@ -1,39 +1,31 @@
 # Roadmap
 
-This is the honest state of Speculos Harness and where it is going. It matches the roadmap section of the [README](./README.md).
+What ships today: the builder workspace, the agent and its mountable FastAPI router, the build service, the versioned wire protocol, and the reference Postgres and MCP connectors. That is a complete product. Clone it, add one key, and a user can describe an app and get one.
 
-> [!IMPORTANT]
-> **Pre-release.** The repository is published spec-first. The structure, the versioned wire protocol, the public interfaces, and typed stubs are here today; the implementation arrives with the v0.1 code drop. Watch or star to follow.
+This file is the longer version of the "Coming to the core" line in the [README](./README.md).
 
-## Now — spec and interfaces published
+## Coming to the core
 
-The contract is public and reviewable, so that the shape of v0.1 can be shaped by feedback before the code is frozen. What is here:
+Open source, Apache-2.0, same as everything else here.
 
-- **The wire protocol (v1).** A hand-rolled SSE chat stream of exactly seven events, the `{files, deps} -> {code, css}` bundle contract, the `postMessage` preview bridge, the message format, and capability negotiation — all in [`spec/`](./spec), versioned behind a `Harness-Protocol: 1` header.
-- **The public interfaces.** The adapter surface — `LLMProvider`, `ProjectStore`, `AuthProvider`, `ConnectorProvider`, `Bundler`, `PackageInstaller`, `AgentTool`, `TelemetrySink` — as TypeScript in [`packages/protocol`](./packages/protocol) and 1:1 Python protocols in the agent kit.
-- **The public API.** `<HarnessProvider>` / `<Builder>` and the hooks on the frontend; `HarnessAgent(...)` and the router mount on the backend. Fully typed, documented, stubbed.
-- **Docs and examples** scaffolded so the quickstart, protocol reference, and security guide land ready.
+- **Read-only share links.** A scoped token that authorizes exactly what a viewer may do. Viewing, never edit rights.
+- **Background jobs.** Schedules, resumable runs, and durable state, so an app keeps working with the tab closed. Long runs checkpoint and resume, and the sandbox behind them is swappable.
+- **In-browser bundler.** `@speculos-harness/sandbox-browser`, an optional build path for frontend-only apps that drops the build-service sidecar. It ships once a shared bundler conformance suite proves parity with the server bundler. Until then `/capabilities` advertises server bundling only, so nothing claims a parity that does not exist.
+- **Code export and one-click deploy.** Take a generated app out of the workspace and run it yourself.
+- **Prompt queue.** Stack the next instruction while a build is still running.
+- **Cost and token meter.** Per-project spend in the UI, from the numbers `TelemetrySink` already emits. Inference is billed by your provider, on your keys - no markup.
+- **Curated dependency allowlist.** Constrain `install_package` to a reviewed set, for hosted deployments that need it.
 
-No implementation ships in this phase. Every stub raises `not yet implemented`.
+## Modules in closed beta
 
-## Next — the v0.1 code drop
+The open-source core is complete on its own. Speculos also runs commercial modules that plug into the same deployment:
 
-The implementation, under Apache-2.0, in three deliverables:
+- **Prompt log.** Every prompt recorded and replayable.
+- **Connector catalog.** Governed connectors beyond the Postgres and MCP references - warehouses, CRMs, and internal systems, granted per person by an admin.
+- **Dynamic model routing.** The agent picks the model per task; an explicit user pick wins. The `route_for` / `routeFor` hook on `LLMProvider` is open source and documented, so you can implement your own policy against it. What is commercial is the routing module we ship and run.
 
-- **The workspace** — `@speculos-harness/react` and `@speculos-harness/preview`: `<Builder>` with its panes and hooks, the read-only file explorer, the version timeline, plan mode, CSV and screenshot starts, and the self-healing preview.
-- **The agent kit** — `speculos-harness` on PyPI: the mountable FastAPI router and the production agent loop, moved rather than reimplemented, with its history-management and token-efficiency logic intact, the reference `SQLiteProjectStore` / `FsProjectStore`, `LiteLLMProvider`, and single-user auth.
-- **The bundler** — `@speculos-harness/bundler`: the locked-down build-service container, plus the reference **MCP + Postgres connectors** so the first demo fetches real data.
-
-Shipped with it: a one-command `docker compose up` that opens a working builder, a `.env.example` and both `examples/`, a docs site, and golden conformance fixtures the client and the Python kit replay in CI.
-
-## Later
-
-- **In-browser bundler** — `@speculos-harness/sandbox-browser`, an optional build path for frontend-only apps that drops the build-service sidecar. It ships only once a shared bundler conformance suite proves parity; until then `/capabilities` advertises server bundling only, so nothing claims a parity that does not exist.
-- **Dynamic model routing** — the agent picks the model per task (a deeper model for planning, a fast cheap one for crunching a CSV) when the user has not chosen one. An explicit per-turn pick always wins, and a routed choice must come from `allowed_models`.
-- **Sharing and background jobs** — read-only share links (a scoped token that authorizes exactly what a viewer may do, never edit rights), and the server-side jobs stack: long runs, scheduled runs, checkpoint-and-resume, durable storage, and swappable sandboxes. These survive the browser tab — the thing a browser-only sandbox structurally cannot do.
-
-Beyond that: code export and one-click deploy, a prompt queue, a cost/token meter, a curated dependency allowlist for hosted deployments, click-to-edit visual editing, and a model-swap eval harness built on the conformance fixtures.
+Modules are how we work with design partners: our AI-native engineers implement them for you and wire them into your deployment, on your servers. [Talk to our team](https://speculos.ai/enterprise).
 
 ## How to influence it
 
-The most useful contribution right now is feedback on the protocol and the interfaces, while they are still soft. Open a discussion or an issue. See [CONTRIBUTING.md](./CONTRIBUTING.md).
+Issues, discussions, and pull requests are open. Feedback on the protocol and the interfaces carries the most weight, because the wire contract is versioned and everyone downstream pays for a migration. See [CONTRIBUTING.md](./CONTRIBUTING.md).

@@ -35,7 +35,7 @@ env/
 *.whl
 *.tar.gz
 
-# Environment / secrets — never commit real keys
+# Environment / secrets - never commit real keys
 .env
 .env.*
 !.env.example

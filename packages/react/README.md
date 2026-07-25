@@ -2,17 +2,15 @@
 
 The embeddable [Speculos Harness](https://speculos.ai) workspace for React: a chat panel beside a live, sandboxed preview, with a read-only file explorer and a version timeline. One provider and one component cover the common case; the panes and the headless hooks are exported for full control.
 
-> **Pre-release — code lands with v0.1.** Every component and hook here is a typed stub that throws `not yet implemented`. The signatures are frozen to the decided public API so you can integrate against them now, but the workspace itself — carved from the production engine behind Speculos — arrives with the **v0.1 code drop**. Watch or star to follow.
+## What it gives you
 
-## What it will contain
+- `<HarnessProvider>` - supplies base URL, namespace, client auth, brand, strings, and connector client-halves to everything beneath it.
+- `<Builder>` - the whole workspace: a resizable two-pane split with the file explorer and version timeline, owning the shared `fileSig` rebuild key and the once-per-build crash-to-auto-fix guard.
+- `<ChatPane>`, `<PreviewPane>`, `<FileExplorer>`, `<VersionTimeline>` - the pieces `<Builder>` is made of, exported on their own, so you can put the chat in a drawer and the preview in a modal and they keep talking to each other.
+- `useHarnessChat`, `useHarnessPreview`, `useHarnessFiles` - headless hooks that own the protocol, state, and streaming, for when you bring your own layout and chrome.
+- `@speculos-harness/react/styles.css` - a token-based stylesheet; override the CSS custom properties to adopt your design system.
 
-- `<HarnessProvider>` — supplies base URL, namespace, client auth, brand, strings, and connector client-halves to everything beneath it.
-- `<Builder>` — the whole workspace: a resizable two-pane split with the file explorer and version timeline, owning the shared `fileSig` rebuild key and the once-per-build crash-to-auto-fix guard.
-- `<ChatPane>`, `<PreviewPane>`, `<FileExplorer>`, `<VersionTimeline>` — the pieces `<Builder>` is made of, exported on their own so you can put the chat in a drawer and the preview in a modal and they keep talking to each other.
-- `useHarnessChat`, `useHarnessPreview`, `useHarnessFiles` — headless hooks that own the protocol, state, and streaming, so you can bring your own layout and chrome.
-- `@speculos-harness/react/styles.css` — a token-based default stylesheet; override the CSS custom properties to adopt your design system.
-
-## The 90% case
+## The common case
 
 ```tsx
 import { HarnessProvider, Builder } from '@speculos-harness/react'
@@ -31,7 +29,7 @@ export function BuilderPage({ projectId }: { projectId: string }) {
     >
       <Builder
         projectId={projectId}
-        layout="preview-left"       // "preview-left" | "chat-left" — pane order is a prop
+        layout="preview-left"       // "preview-left" | "chat-left" - pane order is a prop
         filePanel="explorer"        // "explorer" | "hidden"
       />
     </HarnessProvider>
@@ -39,9 +37,11 @@ export function BuilderPage({ projectId }: { projectId: string }) {
 }
 ```
 
+`brand` and `strings` rename every label, so the workspace speaks your product's language without a fork.
+
 ## The headless escape hatch
 
-The hooks own the protocol, so a consumer can bring their own layout. The crash-to-auto-fix guard lives inside `useHarnessPreview`, so a custom layout cannot accidentally build a fix loop.
+The hooks own the protocol, so you can bring your own layout. The crash-to-auto-fix guard lives inside `useHarnessPreview`, so a custom layout cannot accidentally build a fix loop.
 
 ```tsx
 import { useHarnessChat, useHarnessPreview, useHarnessFiles } from '@speculos-harness/react'
@@ -51,7 +51,7 @@ function CustomBuilder({ projectId }: { projectId: string }) {
   const preview = useHarnessPreview({
     projectId,
     rebuildKey: chat.filesChangedAt,          // bump a string -> full rebuild
-    onError: (err) => chat.send(`the preview crashed: ${err.message} — read the files and fix it`),
+    onError: (err) => chat.send(`the preview crashed: ${err.message} - read the files and fix it`),
   })
   const files = useHarnessFiles({ projectId })
 
@@ -63,6 +63,8 @@ function CustomBuilder({ projectId }: { projectId: string }) {
   )
 }
 ```
+
+The client adapts to the server: it reads `/capabilities` once and hides what the backend does not offer (the model picker's menu, plan mode, attachment kinds, `install_package`, the version timeline).
 
 ## License
 

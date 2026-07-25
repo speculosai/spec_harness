@@ -4,15 +4,11 @@ These are the Python 1:1 mirror of the TypeScript interfaces that live in
 `@speculos-harness/protocol`. The wire *data* types (SSE event payloads,
 ``Project``, ``Snapshot``, capabilities, ``ConnectorSummary``) are generated
 from a single zod source; the *behavioral* interfaces below (methods, async
-iterables, abort signals — things JSON Schema cannot express) are
+iterables, abort signals - things JSON Schema cannot express) are
 hand-maintained 1:1 in both languages, guarded by a signature-drift check and
 the shared conformance suite every reference adapter must pass.
 
-Unlike the rest of this pre-release package, this module contains **real
-definitions**, not stubs: the dataclasses (``Principal``, ``AuthDenied``,
-``TokenUsage``) are usable today, and the ``Protocol`` classes are the exact
-contracts the v0.1 code drop will implement and type-check against. Every
-interface has a shipped OSS default, so the core boots with zero
+Every interface has a shipped OSS default, so the core boots with zero
 configuration.
 
 Design decisions encoded directly in these signatures:
@@ -21,7 +17,7 @@ Design decisions encoded directly in these signatures:
   executor, so a tool and the prompt text that describes it move as one unit
   and cannot drift.
 * ``LLMProvider.stream(..., tools)`` accepts ``list[ToolSchema] | None`` and
-  MUST be passed ``None`` (never ``[]``) in plan mode — some providers reject
+  MUST be passed ``None`` (never ``[]``) in plan mode - some providers reject
   an empty tools array.
 * ``ProjectStore.put_files`` is full-replace and transactional, with
   snapshots owned by the *agent* rather than the store, so a naive adapter
@@ -81,9 +77,9 @@ __all__ = [
 
 
 # ---------------------------------------------------------------------------
-# Value types — the loosely-typed shapes the wire models will formalize at v0.1
+# Value types - the shapes the generated wire models formalize
 # ---------------------------------------------------------------------------
-# TODO(v0.1): replace these permissive aliases with pydantic models generated
+# TODO: replace these permissive aliases with pydantic models generated
 # from the protocol JSON Schema, so they cannot drift from the TS source.
 
 #: "/index.tsx" -> source. The whole file map for a project.
@@ -232,7 +228,7 @@ class AuthDenied:
     """A typed, in-band denial for an authenticated-but-blocked caller.
 
     Returning this (instead of raising around the abstraction) is how a
-    billing gate expresses "we know who you are, but you can't do this" —
+    billing gate expresses "we know who you are, but you can't do this" -
     e.g. ``AuthDenied(status=402, message="upgrade required")``.
     """
 
@@ -276,7 +272,8 @@ class LLMProvider(Protocol):
 
         ``ctx`` carries ``requested_model`` (optional per-turn override, honored
         only if allowed) and ``principal``. Returns at least ``model`` plus
-        optional ``api_key``, ``supports_prompt_cache``, and provider ``extra``.
+        optional ``api_key``, ``api_base``, ``supports_prompt_cache``, and
+        provider ``extra``.
         """
         ...
 
@@ -297,7 +294,7 @@ class LLMProvider(Protocol):
     ) -> AsyncIterable[LLMDelta]:
         """Stream a completion as :class:`LLMDelta` items.
 
-        ``tools`` MUST be ``None`` (never ``[]``) in plan mode — some providers
+        ``tools`` MUST be ``None`` (never ``[]``) in plan mode - some providers
         reject an empty tools array. ``signal`` is an abort handle the agent
         loop uses to cancel in flight.
         """
@@ -312,13 +309,16 @@ class LLMProvider(Protocol):
         ...
 
     def route_for(self, ctx: Mapping[str, Any]) -> Optional[str]:
-        """Dynamic per-task model routing. OPTIONAL, post-0.1 fast-follow.
+        """Pick a model for one task. OPTIONAL: the open seam for routing.
 
         ``ctx`` carries ``task`` (``"plan" | "build" | "analyze"``) and
         ``principal``. Only consulted when the user has not explicitly picked a
         model; an explicit per-turn ``model`` always wins, and the routed choice
-        must come from ``allowed_models``. When implemented, ``/capabilities``
+        must come from ``allowed_models``. Implement it and ``/capabilities``
         advertises ``routing: true``.
+
+        The hook is yours to implement. Speculos's ready-made routing policy is
+        a closed-beta module (https://speculos.ai/enterprise).
         """
         ...
 
@@ -332,8 +332,10 @@ class LLMProvider(Protocol):
 class Bundler(Protocol):
     """Turns ``{files, deps}`` into browser-ready ``{code, css}``.
 
-    Usually a client for the ``@speculos-harness/bundler`` sidecar container;
-    a browser-side (esbuild-wasm) implementation is a post-0.1 fast-follow.
+    Usually a client for the ``@speculos-harness/bundler`` sidecar container.
+    A browser-side (esbuild-wasm) implementation is on the core roadmap: it
+    ships once a shared bundler conformance suite proves parity with the
+    sidecar, and until then ``/capabilities`` advertises server bundling.
     """
 
     async def bundle(
@@ -397,7 +399,7 @@ class ProjectStore(Protocol):
     async def put_files(self, id: str, files: FileMap) -> None:
         """FULL REPLACE, transactional.
 
-        The whole file map is swapped atomically — partial writes must never be
+        The whole file map is swapped atomically - partial writes must never be
         observable, and the agent (not the store) owns pre-turn snapshots.
         """
         ...
@@ -441,7 +443,7 @@ class AgentTool(Protocol):
     """One tool the agent can call, with everything it needs co-located.
 
     Built-ins: ``write_file``, ``edit_file`` (match-exactly-once), ``read_file``,
-    ``delete_file``, ``install_package`` — see
+    ``delete_file``, ``install_package`` - see
     :mod:`speculos_harness.tools.files`.
     """
 
@@ -460,7 +462,7 @@ class AgentTool(Protocol):
         ...
 
     def prompt_fragment(self, ctx: ToolContext) -> str:
-        """Optional. Text injected into the system prompt — the tool and the
+        """Optional. Text injected into the system prompt - the tool and the
         prompt that describes it move as one unit."""
         ...
 

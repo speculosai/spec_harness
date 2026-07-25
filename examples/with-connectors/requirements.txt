@@ -1,0 +1,8 @@
+# Connector example - dependencies.
+
+# The mountable agent router, with the Postgres driver extra. The MCP connector
+# needs nothing beyond the base package.
+speculos-harness[postgres]
+
+# The ASGI server used to run this example. Any ASGI server works.
+uvicorn[standard]>=0.29

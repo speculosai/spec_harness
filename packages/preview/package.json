@@ -1,7 +1,7 @@
 {
   "name": "@speculos-harness/preview",
-  "version": "0.0.0",
-  "description": "The framework-agnostic Speculos Harness preview core — null-origin srcdoc assembly, the postMessage data bridge, and the in-iframe resolver shim.",
+  "version": "0.1.0",
+  "description": "The framework-agnostic Speculos Harness preview core - null-origin srcdoc assembly, the postMessage data bridge, and the in-iframe resolver shim.",
   "license": "Apache-2.0",
   "homepage": "https://speculos.ai",
   "type": "module",

@@ -1,24 +1,24 @@
 # @speculos-harness/sandbox-browser
 
-An optional, in-browser `Bundler` for [Speculos Harness](https://speculos.ai), built on esbuild-wasm. It resolves imports from a CDN against a pinned dependency set — no Bun sidecar, no server round-trip — so a frontend-only app can preview without the build service running.
+The optional in-browser build path for [Speculos Harness](https://speculos.ai): a `Bundler` built on esbuild-wasm that resolves imports from a CDN against a pinned dependency set. No Bun sidecar, no server round-trip, so a frontend-only app can preview without the build service running.
 
-> **Post-v0.1 fast-follow — not a launch item.** This package is deliberately *not* part of the v0.1 code drop. The Bun sidecar (`@speculos-harness/bundler`) is the only reference bundler in v0.1. Real parity with it is a project of its own, and until a shared bundler conformance suite is green, `/capabilities` advertises server bundling only, so nothing claims a parity that does not exist. The factory here is a typed stub that throws. Watch or star to follow.
+It is a core roadmap item, and it turns on once it matches the server bundler. The Bun sidecar (`@speculos-harness/bundler`) is the reference bundler; until a shared bundler conformance suite proves parity, `/capabilities` advertises server bundling, so nothing claims a parity that does not exist.
 
-## Why it is a fast-follow, not a launch item
+## What parity means here
 
-esbuild-wasm has no `node_modules`, so reaching Bun-bundler parity means building all of:
+esbuild-wasm has no `node_modules`, so matching the Bun bundler means all of:
 
 - a **CDN import-resolution plugin** (esm.sh) so bare imports resolve in the browser;
-- a **pinned, supported dependency set** — only what resolves from the CDN is available, which is why this bundler reports `supportsInstall: false`;
+- a **pinned, supported dependency set** - only what resolves from the CDN is available, which is why this bundler reports `supportsInstall: false`;
 - the **automatic JSX runtime** wired to match the server bundler's transpile exactly;
-- a **shared bundler conformance suite** — the same files must produce runnable output on both bundlers — that must be green before this is called equivalent.
+- a **shared bundler conformance suite** - the same files must produce runnable output on both bundlers - green before this is called equivalent.
 
-## What it will contain
+## What it gives you
 
-- `createBrowserBundler(opts)` — returns a `Bundler` (from `@speculos-harness/protocol`) with `caps: { location: 'browser', supportsInstall: false, jsxRuntime: 'automatic' }`.
-- `BROWSER_BUNDLER_CAPS` — the fixed capability descriptor.
+- `createBrowserBundler(opts)` - a `Bundler` (from `@speculos-harness/protocol`) with `caps: { location: 'browser', supportsInstall: false, jsxRuntime: 'automatic' }`.
+- `BROWSER_BUNDLER_CAPS` - the fixed capability descriptor.
 
-## Intended usage (once it lands)
+## Usage
 
 ```ts
 import { createBrowserBundler } from '@speculos-harness/sandbox-browser'
@@ -34,7 +34,7 @@ const preview = useHarnessPreview({
 })
 ```
 
-Because `supportsInstall` is `false`, the workspace hides `install_package` when this bundler is active — the client adapts from the server's `/capabilities`.
+Because `supportsInstall` is `false`, the workspace hides `install_package` when this bundler is active - the client adapts from the server's `/capabilities`.
 
 ## License
 

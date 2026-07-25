@@ -1,8 +1,8 @@
 # Chat protocol
 
 The chat call is the heart of the workspace. The client sends a user's message
-for a project; the server streams back the agent's work — text, tool calls, tool
-results — as a sequence of server-sent events. When a file-mutating tool
+for a project; the server streams back the agent's work - text, tool calls, tool
+results - as a sequence of server-sent events. When a file-mutating tool
 succeeds, the client rebuilds the preview. That loop is the whole product.
 
 - **Endpoint:** `POST {base}/chat`
@@ -11,21 +11,21 @@ succeeds, the client rebuilds the preview. That loop is the whole product.
   Vercel AI SDK data-stream protocol
 - **Header:** every response carries `Harness-Protocol: 1`
 
-`{base}` is wherever the agent router is mounted — `/api/builder` in the
+`{base}` is wherever the agent router is mounted - `/api/builder` in the
 defaults, but any prefix the host chooses.
 
 ## Request body
 
 ```jsonc
 {
-  "projectId": "proj_northwind_arrears",   // required — the project to build in
-  "message": "show arrears by building, worst first",  // required — the user's turn
+  "projectId": "proj_northwind_arrears",   // required - the project to build in
+  "message": "show arrears by building, worst first",  // required - the user's turn
 
-  "planMode": true,        // optional — omit when false; see "Plan mode" below
-  "model": "openai/gpt-4.1",   // optional — per-turn model override, honored only if allowed
-  "lang": "en",            // optional — UI/response language hint
+  "planMode": true,        // optional - omit when false; see "Plan mode" below
+  "model": "anthropic/claude-fable-5",  // optional - per-turn model override, honored only if allowed
+  "lang": "en",            // optional - UI/response language hint
 
-  "attachments": [         // optional — image and/or CSV attachments for this turn
+  "attachments": [         // optional - image and/or CSV attachments for this turn
     { "kind": "image", "name": "mockup.png", "dataUrl": "data:image/png;base64,iVBORw0KG..." },
     { "kind": "csv",   "name": "arrears.csv", "text": "unit,balance\n12A,1450.00\n...", "rows": 812 }
   ]
@@ -38,7 +38,7 @@ Field notes:
   files and message history before the turn.
 - **`message`** is the user's plain-language request.
 - **`planMode`** is a boolean. Omit it (or send `false`) for a normal build turn.
-  When `true`, the agent proposes an approach instead of writing code — see
+  When `true`, the agent proposes an approach instead of writing code - see
   [Plan mode](#plan-mode).
 - **`model`** is a per-turn override. The server honors it **only** if the model
   is in the server's allowed set (advertised in
@@ -47,7 +47,7 @@ Field notes:
   routing.
 - **`lang`** is an advisory language hint (BCP-47 style, e.g. `"en"`).
 - **`attachments`** carries images and CSVs. See
-  [Attachments](#attachments-imagecsv).
+  [Attachments](#attachments-image--csv).
 
 ### Attachments (image / CSV)
 
@@ -55,11 +55,11 @@ Two attachment kinds are defined in protocol v1. The set of accepted kinds is
 also advertised per-server in [`/capabilities`](./capabilities.md).
 
 ```jsonc
-// image — a screenshot or mockup to build from ("make it look like this")
+// image - a screenshot or mockup to build from ("make it look like this")
 { "kind": "image", "name": "dashboard-mockup.png",
   "dataUrl": "data:image/png;base64,<base64 bytes>" }
 
-// csv — a spreadsheet to build around ("here's the data, build me a dashboard")
+// csv - a spreadsheet to build around ("here's the data, build me a dashboard")
 { "kind": "csv", "name": "rent-roll.csv",
   "text": "unit,tenant,balance\n12A,Acme LLC,1450.00\n...",
   "rows": 812 }
@@ -69,13 +69,13 @@ also advertised per-server in [`/capabilities`](./capabilities.md).
   directly.
 - A **CSV** carries its content as raw `text`, plus a `rows` count the UI shows
   before the file is parsed. On persistence a CSV attachment becomes an
-  `attachment_csv` content part on the stored message — see
+  `attachment_csv` content part on the stored message - see
   [message-format.md](./message-format.md), including the legacy-alias read rule.
 
 ## Auth is a mode, not a pin
 
-The client attaches credentials to **every** call it makes — the chat SSE, the
-bundle call, project and snapshot reads, and every preview bridge-proxy fetch —
+The client attaches credentials to **every** call it makes - the chat SSE, the
+bundle call, project and snapshot reads, and every preview bridge-proxy fetch -
 in one of two modes. The mode is a deployment choice; the wire is the same.
 
 ### Bearer mode (default for cross-origin embeds)
@@ -100,7 +100,7 @@ requirements**, and a conforming server MUST enforce them:
 2. CORS must use a **per-origin allowlist** that echoes the caller's origin in
    `Access-Control-Allow-Origin` and sets `Access-Control-Allow-Credentials: true`.
 
-`Access-Control-Allow-Origin: *` is incompatible with credentialed requests —
+`Access-Control-Allow-Origin: *` is incompatible with credentialed requests -
 the browser rejects the combination. A conforming server configured for cookie
 mode with a wildcard origin MUST **refuse to start** rather than ship an embed
 that silently fails in production. (See the cross-origin recipe in
@@ -168,7 +168,7 @@ an `index` and a chunk of the arguments JSON (`argsDelta`); the client keys a
 pending card by `index` and concatenates the deltas. When the matching
 `tool-call` arrives with the real `toolCallId`, `name`, and parsed `input`, the
 client finalizes that card. Pairing is by canonicalized-argument equality first,
-then by first-pending fallback — a `tool-call` whose reconstructed input matches
+then by first-pending fallback - a `tool-call` whose reconstructed input matches
 a pending card's accumulated args attaches to that card; otherwise it attaches to
 the earliest still-pending card. Once finalized, the card is marked running
 (`pending`) until its `tool-result` arrives.
@@ -195,7 +195,7 @@ rebuild. This is the entire mechanism behind "the preview feels live": the agent
 writes, the file-mutation result lands, the sig bumps, the sandbox refreshes.
 There is no separate "run" signal.
 
-The rebuild key is a monotonic string. Bumping it — and only bumping it — drives
+The rebuild key is a monotonic string. Bumping it - and only bumping it - drives
 the preview build effect, which is keyed on `${projectId}:${rebuildKey}`. The
 crash-to-auto-fix loop rides the same key: the preview fires its `onError`
 handler at most once per rebuild key, so a broken build asks the agent to repair

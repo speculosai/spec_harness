@@ -1,20 +1,15 @@
 /**
  * @speculos-harness/connectors-mcp
  *
- * The reference MCP connector — the TypeScript client half (the bridge handler and the
- * in-iframe resolver shim). MCP is the cleanest connector to ship first because it is
- * an open standard. The server half (agent tools + the parent-side data fetch) lives in
- * the Python kit as `speculos_harness.connectors.mcp`; this package and that one are
- * versioned together.
+ * The reference MCP connector - the TypeScript client half (the bridge handler and the
+ * in-iframe resolver shim). The server half (agent tools + the parent-side data fetch)
+ * lives in the Python kit as `speculos_harness.connectors.mcp`; this package and that
+ * one are versioned together.
  *
  * A connector bundles everything a data source needs: the tools the agent can call, the
  * lines it adds to the system prompt, the parent-side RPC handler, and the in-iframe
- * resolver shim the generated app fetches through. Credentials stay server-side — the
+ * resolver shim the generated app fetches through. Credentials stay server-side - the
  * generated app asks the bridge for rows, never for a URL or a token.
- *
- * PRE-RELEASE: the `mcpConnector` factory signature is frozen; the `handle` and `shim`
- * bodies are stubs that throw. The implementation — carved from the production MCP
- * client behind Speculos — arrives with the v0.1 code drop.
  */
 
 import type {
@@ -23,8 +18,8 @@ import type {
   RuntimeContext,
 } from '@speculos-harness/protocol';
 
-/** Thrown by every stub in this package until the v0.1 code drop lands. */
-const NOT_IMPLEMENTED = 'speculos-harness: not yet implemented — arrives with the v0.1 code drop';
+/** Placeholder message for the exports the implementation drops into. */
+const NOT_IMPLEMENTED = '@speculos-harness/connectors-mcp: implementation pending';
 
 /** Options for {@link mcpConnector}. */
 export interface McpConnectorOptions {
@@ -47,9 +42,9 @@ export interface McpConnectorOptions {
  * the caller's `Principal` scope, so two tenants on the same connector see only their
  * own data.
  *
- * TODO(v0.1): port the MCP client (`handle` bridging `<ns>-mcp` calls to the MCP server,
- * `list` summarizing available tools for the chip UI and prompt, and `shim` contributing
- * the in-iframe `window.<ns>.mcp` resolver), parameterizing `clientInfo.name`.
+ * TODO: the MCP client - `handle` bridging `<ns>-mcp` calls to the MCP server, `list`
+ * summarizing available tools for the chip UI and prompt, and `shim` contributing the
+ * in-iframe `window.<ns>.mcp` resolver, with `clientInfo.name` parameterized.
  */
 export function mcpConnector(opts: McpConnectorOptions): ConnectorProvider {
   const _url = opts.url;

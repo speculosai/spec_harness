@@ -1,7 +1,7 @@
 {
   "name": "@speculos-harness/protocol",
-  "version": "0.0.0",
-  "description": "The versioned Speculos Harness wire contract and adapter interfaces — the single source of truth both the React client and the Python agent kit implement.",
+  "version": "0.1.0",
+  "description": "The versioned Speculos Harness wire contract and adapter interfaces - the single source of truth both the React client and the Python agent kit implement.",
   "license": "Apache-2.0",
   "homepage": "https://speculos.ai",
   "type": "module",

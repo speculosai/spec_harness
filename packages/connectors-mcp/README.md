@@ -1,8 +1,6 @@
 # @speculos-harness/connectors-mcp
 
-The reference MCP connector for [Speculos Harness](https://speculos.ai) — the TypeScript **client half**: the bridge handler and the in-iframe resolver shim. MCP is the cleanest connector to ship first because it is an open standard. The **server half** — the agent tools and the parent-side data fetch — lives in the Python kit as `speculos_harness.connectors.mcp` (the factory `mcp_connector(url=...)`); the two halves are versioned together.
-
-> **Pre-release — code lands with v0.1.** The `mcpConnector` factory signature is frozen; the `handle` and `shim` bodies are stubs that throw `not yet implemented`. The implementation — carved from the production MCP client behind Speculos — arrives with the **v0.1 code drop**. Watch or star to follow.
+The reference MCP connector for [Speculos Harness](https://speculos.ai) - the TypeScript **client half**: the bridge handler and the in-iframe resolver shim. The **server half**, the agent tools and the parent-side data fetch, lives in the Python kit as `speculos_harness.connectors.mcp` (the factory `mcp_connector(url=...)`). The two halves are versioned together.
 
 ## What a connector is
 
@@ -13,11 +11,11 @@ A connector bundles everything a data source needs:
 - the parent-side **RPC handler** (`handle`), and
 - the in-iframe **resolver shim** (`shim`) the generated app fetches through.
 
-Credentials stay server-side. The generated app, sealed in the null-origin iframe, asks the bridge for rows — never for a URL or a token. Both halves resolve against the caller's `Principal` scope, so two tenants pointed at the same connector see only their own data.
+Credentials stay server-side. The generated app, sealed in the null-origin iframe, asks the bridge for rows - never for a URL or a token. Both halves resolve against the caller's `Principal` scope, so two tenants pointed at the same connector see only their own data.
 
-## What it will contain
+## What it gives you
 
-- `mcpConnector({ url, clientName? })` — returns the client half as a `ConnectorProvider` (from `@speculos-harness/protocol`): `list` for the chip UI and prompt context, `handle` for `<ns>-mcp` bridge calls, and `shim` for the in-iframe `window.<ns>.mcp` resolver.
+`mcpConnector({ url, clientName? })` returns the client half as a `ConnectorProvider` (from `@speculos-harness/protocol`): `list` for the chip UI and prompt context, `handle` for `<ns>-mcp` bridge calls, and `shim` for the in-iframe `window.<ns>.mcp` resolver.
 
 ## Usage
 
@@ -46,6 +44,10 @@ agent = HarnessAgent(
     ...
 )
 ```
+
+## Writing your own
+
+`ConnectorProvider` is open, so any data source can be wired the same way: MCP and Postgres are the references in this repo. The wider governed catalog - warehouses, CRMs, internal systems, granted per person by an admin - is a [closed-beta module](https://speculos.ai/enterprise).
 
 ## License
 

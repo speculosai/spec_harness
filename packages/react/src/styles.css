@@ -1,13 +1,12 @@
 /*
- * @speculos-harness/react — default workspace stylesheet.
+ * @speculos-harness/react - default workspace stylesheet.
  *
- * PRE-RELEASE: this is the token surface, not the full stylesheet. The complete
- * styles for the chat pane, preview pane, file explorer, and version timeline ship
- * with the v0.1 code drop. What is here is the contract that will not change: the
- * workspace is built on CSS custom properties, so overriding these tokens (colors,
- * radii, type) re-themes the whole workspace to your design system without a fork.
+ * The workspace is built on CSS custom properties. Override these tokens (colors,
+ * radii, type) and the whole workspace adopts your design system, without a fork.
+ * The tokens below are the stable contract; the component styles consume them.
  *
- * TODO(v0.1): ship the component styles that consume these tokens.
+ * TODO: component styles for the chat pane, preview pane, file explorer, and
+ * version timeline, all reading from the tokens below.
  */
 
 :root {

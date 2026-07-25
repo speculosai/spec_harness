@@ -1,13 +1,10 @@
-"""``HarnessAgent`` — assemble the adapters and expose the mountable router.
+"""``HarnessAgent`` - assemble the adapters and expose the mountable router.
 
 This is the one object an integrator constructs. It holds the configured
 adapters (store, LLM, auth, connectors, bundler, telemetry) and builds a
 :class:`fastapi.APIRouter` that speaks the versioned Harness wire protocol.
 
-The router is real and mountable **today**: every route is registered so you
-can inspect the surface and wire your app up now. Until the v0.1 code drop each
-route returns ``501 {"error": "not yet implemented — v0.1"}`` instead of doing
-real work. Mount it and hit ``/capabilities`` to see it respond.
+Mount it under any prefix and every route in the protocol is registered.
 """
 
 from __future__ import annotations
@@ -29,11 +26,11 @@ from .interfaces import (
 #: The advertised wire-protocol integer. Sent/consumed as ``Harness-Protocol``.
 PROTOCOL_VERSION = 1
 
-_NOT_IMPL = {"error": "not yet implemented — v0.1"}
+_NOT_IMPL = {"error": "not implemented"}
 
 
-def _stub_response() -> JSONResponse:
-    """The uniform 501 body every route returns until v0.1."""
+def _not_implemented() -> JSONResponse:
+    """The uniform 501 body, returned where a handler is pending."""
     return JSONResponse(status_code=501, content=_NOT_IMPL)
 
 
@@ -72,7 +69,7 @@ class HarnessAgent:
     ) -> None:
         self.store = store
         self.llm = llm
-        # TODO(v0.1): default to single_user() — an AuthProvider that always
+        # TODO: default to single_user() - an AuthProvider that always
         # returns Principal(user_id="local", can_edit=True).
         self.auth = auth
         self.connectors: Sequence[ConnectorProvider] = tuple(connectors or ())
@@ -104,107 +101,107 @@ class HarnessAgent:
         async def chat(request: Request) -> Any:  # noqa: ANN401
             """Run one agent turn and stream the result as hand-rolled SSE.
 
-            TODO(v0.1): resolve the principal via ``auth``, load the project +
+            TODO: resolve the principal via ``auth``, load the project +
             history from ``store``, build the system prompt (``prompt.py``) with
             ``instructions`` injected, take a pre-turn snapshot, then run the
-            agent loop (``loop.py``) — up to N steps of ``llm.stream(...)``,
+            agent loop (``loop.py``) - up to N steps of ``llm.stream(...)``,
             executing tools server-side and re-emitting the seven Harness events
             (``user-message``, ``text-delta``, ``tool-call-delta``,
             ``tool-call``, ``tool-result``, ``error``, ``done``) via
             ``sse.py``. Plan mode passes ``tools=None`` (never ``[]``).
             """
-            return _stub_response()
+            return _not_implemented()
 
         # ---- 2. Bundle (proxy + connector scoping) -------------------------
         @router.post("/bundle/{project_id}")
         async def bundle(project_id: str, request: Request) -> Any:  # noqa: ANN401
             """Bundle a project's files and return ``{code, css, connectors?}``.
 
-            TODO(v0.1): read the project's files/deps from ``store``, proxy
+            TODO: read the project's files/deps from ``store``, proxy
             ``{files, deps}`` to the bundler at ``bundler_url``, and attach the
             scoped ``ConnectorSummary`` from ``ConnectorProvider.list`` +
             ``detect_used``. Returns 200 ``{code, css}`` or 422 ``{error}``.
             """
-            return _stub_response()
+            return _not_implemented()
 
         # ---- 3. Projects ---------------------------------------------------
         @router.get("/projects")
         async def list_projects(request: Request) -> Any:  # noqa: ANN401
             """List the caller's projects (scoped to their ``Principal``).
 
-            TODO(v0.1): back onto ``store`` with principal-scoped filtering.
+            TODO: back onto ``store`` with principal-scoped filtering.
             """
-            return _stub_response()
+            return _not_implemented()
 
         @router.post("/projects")
         async def create_project(request: Request) -> Any:  # noqa: ANN401
             """Create a project from a ``NewProject`` body.
 
-            TODO(v0.1): ``store.create_project(...)``; seed from a starter
+            TODO: ``store.create_project(...)``; seed from a starter
             template when one is named.
             """
-            return _stub_response()
+            return _not_implemented()
 
         @router.get("/projects/{project_id}")
         async def get_project(project_id: str, request: Request) -> Any:  # noqa: ANN401
             """Fetch one project over the minimal ``Project`` schema.
 
-            TODO(v0.1): ``store.get_project(...)``; 404 when missing or
+            TODO: ``store.get_project(...)``; 404 when missing or
             out-of-scope.
             """
-            return _stub_response()
+            return _not_implemented()
 
         @router.patch("/projects/{project_id}")
         async def patch_project(project_id: str, request: Request) -> Any:  # noqa: ANN401
             """Patch project metadata (name, dependencies, ...).
 
-            TODO(v0.1): ``store.patch_project(...)``.
+            TODO: ``store.patch_project(...)``.
             """
-            return _stub_response()
+            return _not_implemented()
 
         # ---- 4. Snapshots (version timeline + rollback) --------------------
         @router.get("/projects/{project_id}/snapshots")
         async def list_snapshots(project_id: str, request: Request) -> Any:  # noqa: ANN401
             """List pre-turn snapshots: ``[{id, messageIndex, createdAt, kind}]``.
 
-            TODO(v0.1): ``store.list_snapshots(...)`` when the store implements
+            TODO: ``store.list_snapshots(...)`` when the store implements
             the optional snapshot surface; otherwise this route is not
             advertised in ``/capabilities``.
             """
-            return _stub_response()
+            return _not_implemented()
 
         @router.post("/projects/{project_id}/rollback")
         async def rollback(project_id: str, request: Request) -> Any:  # noqa: ANN401
             """Restore a snapshot and return ``{ok, messageIndex, undoSnapshotId}``.
 
-            TODO(v0.1): take an undo snapshot of the current state, then
+            TODO: take an undo snapshot of the current state, then
             full-replace files + messages from the target snapshot via ``store``.
             """
-            return _stub_response()
+            return _not_implemented()
 
         # ---- 5. Capabilities ----------------------------------------------
         @router.get("/capabilities")
         async def capabilities(request: Request) -> Any:  # noqa: ANN401
             """Advertise what this backend supports, for client negotiation.
 
-            TODO(v0.1): return ``{protocol, namespace, sandbox{location,
+            TODO: return ``{protocol, namespace, sandbox{location,
             supportsInstall, jsxRuntime}, planMode, attachments, models,
-            connectors}`` — ``models`` from ``llm.allowed_models``,
+            connectors}`` - ``models`` from ``llm.allowed_models``,
             ``connectors`` from the mounted providers, ``sandbox`` from the
             bundler's caps. Clients that get a 404 assume protocol-1 defaults.
             """
-            return _stub_response()
+            return _not_implemented()
 
         # ---- 6. Connector RPC ---------------------------------------------
         @router.post("/connectors/{kind}")
         async def connector(kind: str, request: Request) -> Any:  # noqa: ANN401
             """Dispatch a runtime bridge RPC to the matching connector.
 
-            TODO(v0.1): resolve the principal, find the ``ConnectorProvider`` for
+            TODO: resolve the principal, find the ``ConnectorProvider`` for
             ``kind``, and return ``provider.handle(kind, payload, ctx)``. This is
             where the preview iframe's ``<ns>-*`` postMessages land after the
             React bridge forwards them. Auth-gated like every other route.
             """
-            return _stub_response()
+            return _not_implemented()
 
         return router

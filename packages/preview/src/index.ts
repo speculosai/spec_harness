@@ -6,20 +6,16 @@
  * in-iframe resolver shim. `@speculos-harness/react` renders around this; a non-React
  * host can use it directly.
  *
- * PRE-RELEASE: signatures are frozen to the decided API; bodies are stubs that throw.
- * The implementation — carved from the production preview that runs behind Speculos —
- * arrives with the v0.1 code drop.
- *
  * Security is load-bearing here: the iframe is null-origin (`allow-same-origin` is
- * never added — that omission is *why* the bridge exists), and the sandbox attribute
+ * never added - that omission is *why* the bridge exists), and the sandbox attribute
  * is the fixed, normative {@link SANDBOX_ATTRIBUTES} string from the protocol package.
  */
 
 import { SANDBOX_ATTRIBUTES, BRIDGE_TIMEOUT_MS } from '@speculos-harness/protocol';
 import type { ConnectorSummary } from '@speculos-harness/protocol';
 
-/** Thrown by every stub in this package until the v0.1 code drop lands. */
-const NOT_IMPLEMENTED = 'speculos-harness: not yet implemented — arrives with the v0.1 code drop';
+/** Placeholder message for the exports the implementation drops into. */
+const NOT_IMPLEMENTED = '@speculos-harness/preview: implementation pending';
 
 /** Re-exported for hosts that assemble the iframe themselves. Never alter this string. */
 export { SANDBOX_ATTRIBUTES } from '@speculos-harness/protocol';
@@ -60,9 +56,9 @@ export interface BuildSrcDocOptions {
  * code, and the "rendered nothing" watchdog. Set the result as the iframe `srcDoc` with
  * `sandbox={SANDBOX_ATTRIBUTES}`.
  *
- * TODO(v0.1): port `buildSrcDoc` from the production preview — head assembly, CSS
- * inlining, `escapeForScript` for the user code, the shim injection point, the error
- * capture that posts `preview-error`, and the render watchdog.
+ * TODO: head assembly, CSS inlining, `escapeForScript` for the user code, the shim
+ * injection point, the error capture that posts `preview-error`, and the render
+ * watchdog.
  */
 export function buildSrcDoc(_opts: BuildSrcDocOptions): string {
   throw new Error(NOT_IMPLEMENTED);
@@ -99,8 +95,8 @@ export interface Bridge {
  * per-request timeout and returns never-throwing stubs for unknown connector kinds;
  * surfaces `preview-error` messages through `onError`.
  *
- * TODO(v0.1): port the parent `onMsg`/`reply` bridge — correlation by `id`, the 60s
- * timeout, the never-throw `Proxy` stub for unknown kinds, and `preview-error` routing.
+ * TODO: the parent `onMsg`/`reply` bridge - correlation by `id`, the 60s timeout, the
+ * never-throw `Proxy` stub for unknown kinds, and `preview-error` routing.
  */
 export function createBridge(_opts: CreateBridgeOptions): Bridge {
   throw new Error(NOT_IMPLEMENTED);
@@ -115,8 +111,8 @@ export function createBridge(_opts: CreateBridgeOptions): Bridge {
  * When `ns !== 'app'`, the shim also installs an alias so code written against a
  * different namespace keeps working.
  *
- * TODO(v0.1): port the shim generator (`speculosShim` -> `makeShim(ns)`), parameterized
- * by namespace, folding in each connector's `shim(summary, ns)` contribution.
+ * TODO: the shim generator, parameterized by namespace, folding in each connector's
+ * `shim(summary, ns)` contribution.
  */
 export function makeShim(_ns: string, _summary?: ConnectorSummary): string {
   throw new Error(NOT_IMPLEMENTED);
