@@ -9,7 +9,7 @@ Users describe the tool they need. The agent builds it against their real data, 
 <img alt="License: Apache-2.0" src="https://img.shields.io/badge/license-Apache--2.0-blue" />
 <img alt="Protocol: v1" src="https://img.shields.io/badge/wire%20protocol-v1-8A2BE2" />
 
-**[Quickstart](#quickstart)** · **[What is in the box](#what-is-in-the-box)** · **[Drop it into your product](#drop-it-into-your-product)** · **[Configuration](#configuration)** · **[Security](#security)** · **[Modules in closed beta](#modules-in-closed-beta)** · **[Contributing](#contributing-security-and-license)**
+**[Quickstart](#quickstart)** · **[What's included](#whats-included)** · **[Drop it into your product](#drop-it-into-your-product)** · **[Configuration](#configuration)** · **[Security](#security)** · **[Modules in closed beta](#modules-in-closed-beta)** · **[Contributing](#contributing-security-and-license)**
 
 </div>
 
@@ -17,7 +17,7 @@ Users describe the tool they need. The agent builds it against their real data, 
 
 ---
 
-This is the engine behind [Speculos](https://speculos.ai/vibe-coding), running in production today. Same code, open source.
+This is the engine behind [Speculos](https://speculos.ai/cloud-demo), running in production today. Same code, open source.
 
 It ships as three pieces: an npm frontend, a Python backend router, and a build-service container. Each has a working default, so a builder stands up before any customization. Every default swaps for your own storage, auth, models, and design system.
 
@@ -38,7 +38,9 @@ Three services come up: the example web app, the agent, and the bundler. Open th
 
 ---
 
-## What is in the box
+## What's included
+
+The builder is a few moving parts:
 
 - **Chat beside a live preview.** Describe an app; watch it build and run. Every file change re-bundles and refreshes the preview - there is no run button.
 - **A self-healing preview.** A failed build shows a readable fallback, never a blank screen. The agent reads the error and repairs it, once per build.
@@ -46,7 +48,9 @@ Three services come up: the example web app, the agent, and the bundler. Open th
 - **Plan mode.** For larger changes, the agent proposes an approach with clickable choices before it writes code.
 - **CSV and screenshot starts.** Start a build from a spreadsheet or a screenshot.
 
-The hard parts ship inside the loop: rebuilds fast enough to feel live, tool calls turned into a step log users can follow, context restored when someone returns a week later, and prompt caching plus context trimming that keep cost per build flat.
+Also in the loop: fast rebuilds, a readable step log, context that survives between sessions, and prompt caching that keeps cost per build flat.
+
+**Coming to the core:** read-only share links, and background jobs - schedules, resumable runs, and durable state, so an app keeps working with the tab closed.
 
 ---
 
@@ -200,9 +204,7 @@ The open-source core is complete on its own: the builder, the agent, the bundler
 - **Connector catalog.** Governed connectors beyond the Postgres and MCP references - warehouses, CRMs, and internal systems, granted per person by an admin.
 - **Dynamic model routing.** The agent picks the model per task; an explicit user pick wins.
 
-Share links and background jobs (schedules, checkpoint-and-resume, durable storage) are next.
-
-Our AI-native engineers implement modules for design partners and wire them into your deployment, on your servers. [Talk to our team](https://speculos.ai/demo).
+Modules are how we work with design partners: our AI-native engineers implement them for you and wire them into your deployment, on your servers. [Talk to our team](https://speculos.ai/enterprise).
 
 ---
 
