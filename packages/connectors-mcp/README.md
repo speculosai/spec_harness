@@ -15,7 +15,11 @@ Credentials stay server-side. The generated app, sealed in the null-origin ifram
 
 ## What it gives you
 
-`mcpConnector({ url, clientName? })` returns the client half as a `ConnectorProvider` (from `@speculos-harness/protocol`): `list` for the chip UI and prompt context, `handle` for `<ns>-mcp` bridge calls, and `shim` for the in-iframe `window.<ns>.mcp` resolver.
+`mcpConnector({ url, name?, clientName?, baseUrl?, headers? })` returns the client half as a `ConnectorProvider` (from `@speculos-harness/protocol`): `list` for the chip UI and prompt context, `handle` for `<ns>-mcp` bridge calls, and `shim` for the in-iframe `window.<ns>.<name>` resolver. `name` (default `"mcp"`) is what a generated app reaches the server by, and it must match the `name` on the paired server half.
+
+This half never contacts the MCP server. That would put the server URL, and any token it needs, in the browser - the one thing the bridge exists to prevent. `handle` forwards the frame's payload to `POST {base}/connectors/mcp` on the mounted router and hands the answer back; it needs a route there, either from the bridge host on the runtime context or from the `baseUrl` option.
+
+Mounting the client half is optional. Leave `connectors` off the provider and the workspace proxies `<ns>-mcp` to the same endpoint itself, with the caller's identity attached. Mount it to have the connector named in the chip UI before the first build, or when you assemble the preview document yourself and need the `shim` contribution.
 
 ## Usage
 

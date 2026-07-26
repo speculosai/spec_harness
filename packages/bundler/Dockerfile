@@ -24,24 +24,53 @@
 # See spec/bundle.md and spec/security.md for the normative bundle contract and the
 # non-negotiable build-service safety rules.
 
-FROM oven/bun:1 AS base
+# ---------------------------------------------------------------------------
+# Stage 1 - render the baked base manifest from the service's own dependency list.
+#
+# The list lives in exactly one place per language (BASE_DEPENDENCIES in src/index.ts,
+# LIBRARIES in the Python kit) so the image and the system prompt cannot drift into
+# promising a package the build service does not have. Rendering it here, rather than
+# copying a checked-in file, also keeps the install layer cacheable: the layer below
+# only re-runs when the rendered dependency set actually changes.
+# ---------------------------------------------------------------------------
+FROM oven/bun:1 AS manifest
+WORKDIR /gen
+COPY src/index.ts ./src/index.ts
+RUN bun --eval 'const { BASE_DEPENDENCIES } = await import("./src/index.ts"); \
+      await Bun.write("base-package.json", JSON.stringify({ name: "harness-bundler-base", private: true, dependencies: BASE_DEPENDENCIES }, null, 2) + "\n")'
 
-# A dedicated unprivileged account. The build never runs as root.
+# ---------------------------------------------------------------------------
+# Stage 2 - the runtime image.
+# ---------------------------------------------------------------------------
+FROM oven/bun:1 AS runtime
+
+# A dedicated unprivileged account. The build never runs as root; the self-check in
+# src/index.ts refuses to start if it finds itself at UID 0.
 RUN useradd --create-home --shell /usr/sbin/nologin bundler
 WORKDIR /home/bundler/app
 
 # The promised base dependencies, baked from one shared list. --ignore-scripts here for
-# the same reason it is enforced at runtime.
-COPY base-package.json ./package.json
+# the same reason it is enforced at runtime: an install script is arbitrary code.
+COPY --from=manifest /gen/base-package.json ./package.json
 RUN bun install --ignore-scripts
 
-# The sidecar itself: the serve() entrypoint from src/index.ts.
-COPY --chown=bundler:bundler dist ./dist
+# The sidecar itself: the serve() entrypoint from src/index.ts. It runs when executed
+# directly, so there is no separate bundle step to keep in sync.
+COPY src ./src
+
+# The working directory is the resolution root: `bun add` writes package.json, the
+# lockfile and node_modules into it at runtime, and builds happen in .builds/ beneath
+# it. It has to be owned by the account that does the work.
+RUN chown -R bundler:bundler /home/bundler/app
 
 USER bundler
+ENV PORT=8081
 EXPOSE 8081
 
-# TODO: the build steps that emit dist/serve.js and the generated base-package.json from
-# the shared library list, so the image and the system prompt's LIBRARIES block cannot
-# drift. The entrypoint runs the startup self-check first, then starts the server.
-CMD ["bun", "dist/serve.js"]
+# Cheap and dependency-free: the health route is the same one the startup self-check
+# has already had to pass for the process to be listening at all. Exec form, so no
+# shell is involved.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+  CMD ["bun", "--eval", "const port = process.env.PORT || 8081; const r = await fetch('http://127.0.0.1:' + port + '/health').catch(() => null); process.exit(r && r.ok ? 0 : 1)"]
+
+CMD ["bun", "run", "src/index.ts"]

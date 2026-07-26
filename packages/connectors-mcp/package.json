@@ -19,7 +19,7 @@
   ],
   "sideEffects": false,
   "dependencies": {
-    "@speculos-harness/protocol": "workspace:*"
+    "@speculos-harness/protocol": "^0.1.0"
   },
   "publishConfig": {
     "access": "public"

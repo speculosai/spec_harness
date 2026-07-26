@@ -25,7 +25,19 @@ from __future__ import annotations
 import json
 from typing import Any, Mapping
 
-_NOT_IMPLEMENTED = "speculos_harness.sse: implementation pending"
+__all__ = [
+    "EVENT_NAMES",
+    "sse_frame",
+    "sse_comment",
+    "user_message",
+    "text_delta",
+    "tool_call_delta",
+    "tool_call",
+    "tool_result",
+    "error",
+    "done",
+    "is_ok",
+]
 
 #: The complete, closed set of chat SSE event names. Documented here as the
 #: authoritative Python-side copy; the canonical source is the protocol package.
@@ -39,53 +51,93 @@ EVENT_NAMES = (
     "done",
 )
 
+# Compact separators keep the frames small; a stream is thousands of them.
+_SEPARATORS = (",", ":")
+
 
 def sse_frame(event: str, data: Mapping[str, Any]) -> bytes:
     """Encode one SSE frame: ``event: <event>\\ndata: <json>\\n\\n``.
 
-    TODO: validate ``event`` against :data:`EVENT_NAMES`, JSON-encode
-    ``data`` compactly, and return the UTF-8 bytes.
+    ``event`` must be one of :data:`EVENT_NAMES` - the set is closed in
+    protocol v1, and a typo here is a silently-ignored event on the client
+    (clients MUST ignore names they do not recognize), which is far harder to
+    debug than an exception at the emit site.
+
+    The payload is JSON on a single line. ``json.dumps`` escapes newlines
+    inside strings, which is what keeps a multi-line tool result from breaking
+    the frame apart; ``default=str`` keeps an exotic value in a tool result
+    (a datetime, a Decimal) from killing the stream mid-turn.
     """
-    raise NotImplementedError(_NOT_IMPLEMENTED)
-    return b""  # unreachable; pins the return type. pragma: no cover
+    if event not in EVENT_NAMES:
+        raise ValueError(
+            f"unknown SSE event {event!r}; protocol v1 defines {EVENT_NAMES}"
+        )
+    payload = json.dumps(
+        dict(data), separators=_SEPARATORS, ensure_ascii=False, default=str
+    )
+    return f"event: {event}\ndata: {payload}\n\n".encode("utf-8")
+
+
+def sse_comment(text: str = "") -> bytes:
+    """Encode an SSE comment line - a keep-alive, not an event.
+
+    A comment (``: ...``) carries no event name, so a conforming client
+    ignores it entirely. It exists to stop an intermediary buffering or
+    timing out a long tool call that produces no tokens for a while.
+    """
+    return f": {text}\n\n".encode("utf-8")
 
 
 def user_message(text: str) -> bytes:
     """Emit ``user-message`` (clients MUST ignore it)."""
-    raise NotImplementedError(_NOT_IMPLEMENTED)
+    return sse_frame("user-message", {"text": text})
 
 
 def text_delta(text: str) -> bytes:
     """Emit ``text-delta`` - a chunk of assistant text."""
-    raise NotImplementedError(_NOT_IMPLEMENTED)
+    return sse_frame("text-delta", {"text": text})
 
 
 def tool_call_delta(index: int, args_delta: str) -> bytes:
     """Emit ``tool-call-delta`` - streamed args for a pending tool card."""
-    raise NotImplementedError(_NOT_IMPLEMENTED)
+    # `index` is the client's pending-card key, so it must survive the wire as
+    # a number even when a provider hands it over as a string.
+    return sse_frame("tool-call-delta", {"index": int(index), "argsDelta": args_delta})
 
 
 def tool_call(tool_call_id: str, name: str, input: Mapping[str, Any]) -> bytes:
     """Emit ``tool-call`` - the finalized call with its parsed input."""
-    raise NotImplementedError(_NOT_IMPLEMENTED)
+    return sse_frame(
+        "tool-call",
+        {"toolCallId": tool_call_id, "name": name, "input": dict(input)},
+    )
 
 
 def tool_result(
     tool_call_id: str, name: str, output: Mapping[str, Any]
 ) -> bytes:
     """Emit ``tool-result``. Success is ``output.get("ok") is not False``."""
-    raise NotImplementedError(_NOT_IMPLEMENTED)
+    return sse_frame(
+        "tool-result",
+        {"toolCallId": tool_call_id, "name": name, "output": dict(output)},
+    )
 
 
 def error(message: str) -> bytes:
     """Emit ``error`` - a friendly failure bubble."""
-    raise NotImplementedError(_NOT_IMPLEMENTED)
+    return sse_frame("error", {"message": message})
 
 
 def done() -> bytes:
     """Emit ``done`` - advisory end-of-stream marker."""
-    raise NotImplementedError(_NOT_IMPLEMENTED)
+    return sse_frame("done", {})
 
 
-# ``json`` is the encoder's dependency; referenced here to keep linters quiet.
-_ = json
+def is_ok(output: Mapping[str, Any]) -> bool:
+    """The ``ok !== false`` success convention, in one place.
+
+    Deliberately not ``output.get("ok") is True``: a result object with no
+    ``ok`` key at all counts as success, and only an explicit ``False`` is a
+    failure. The client applies the same test before bumping its rebuild key.
+    """
+    return output.get("ok") is not False

@@ -7,3 +7,4 @@
 #   @speculos-harness/react      depends on protocol (+ preview)
 packages:
   - 'packages/*'
+  - 'examples/minimal/web'

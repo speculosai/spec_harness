@@ -5,8 +5,10 @@
  * radii, type) and the whole workspace adopts your design system, without a fork.
  * The tokens below are the stable contract; the component styles consume them.
  *
- * TODO: component styles for the chat pane, preview pane, file explorer, and
- * version timeline, all reading from the tokens below.
+ * Two rules keep that promise true: no component style hard-codes a colour, a radius
+ * or a font, and every selector is prefixed `harness-`, so nothing here can reach into
+ * the host page and nothing in the host page has to fight it. There is no external
+ * font and no CDN request; the whole sheet is self-contained.
  */
 
 :root {
@@ -35,6 +37,17 @@
   --harness-space-2: 8px;
   --harness-space-3: 12px;
   --harness-space-4: 16px;
+
+  /*
+   * Derived tokens. Each one is mixed from a token above, so overriding just the
+   * eight base colors restyles the tinted surfaces too.
+   */
+  --harness-color-accent-soft: color-mix(in srgb, var(--harness-color-accent) 12%, transparent);
+  --harness-color-danger-soft: color-mix(in srgb, var(--harness-color-danger) 10%, transparent);
+  --harness-color-hover: color-mix(in srgb, var(--harness-color-text) 6%, transparent);
+  --harness-font-size-sm: calc(var(--harness-font-size-base) - 1px);
+  --harness-font-size-xs: calc(var(--harness-font-size-base) - 2px);
+  --harness-shadow-sm: 0 1px 2px rgb(16 24 40 / 6%);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -47,5 +60,954 @@
     --harness-color-accent: #7c74ff;
     --harness-color-accent-text: #ffffff;
     --harness-color-danger: #f97066;
+  }
+}
+
+/* An explicit theme wins over the media query, for hosts with their own switch. */
+:root[data-harness-theme='dark'],
+[data-harness-theme='dark'] {
+  --harness-color-bg: #0c0e12;
+  --harness-color-surface: #16181d;
+  --harness-color-border: #2a2e37;
+  --harness-color-text: #f5f6f7;
+  --harness-color-text-muted: #98a2b3;
+  --harness-color-accent: #7c74ff;
+  --harness-color-accent-text: #ffffff;
+  --harness-color-danger: #f97066;
+}
+
+:root[data-harness-theme='light'],
+[data-harness-theme='light'] {
+  --harness-color-bg: #ffffff;
+  --harness-color-surface: #f6f7f9;
+  --harness-color-border: #e4e7ec;
+  --harness-color-text: #101828;
+  --harness-color-text-muted: #667085;
+  --harness-color-accent: #4f46e5;
+  --harness-color-accent-text: #ffffff;
+  --harness-color-danger: #d92d20;
+}
+
+/* ------------------------------------------------------------------------- *
+ * Root
+ * ------------------------------------------------------------------------- */
+
+.harness-root {
+  box-sizing: border-box;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  color: var(--harness-color-text);
+  background: var(--harness-color-bg);
+  font-family: var(--harness-font-sans);
+  font-size: var(--harness-font-size-base);
+  line-height: 1.5;
+}
+
+.harness-root *,
+.harness-root *::before,
+.harness-root *::after {
+  box-sizing: inherit;
+}
+
+.harness-muted {
+  color: var(--harness-color-text-muted);
+  font-size: var(--harness-font-size-xs);
+}
+
+.harness-mono {
+  font-family: var(--harness-font-mono);
+}
+
+.harness-hidden-input {
+  display: none;
+}
+
+@keyframes harness-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.harness-spin {
+  animation: harness-spin 0.9s linear infinite;
+  transform-origin: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .harness-spin {
+    animation-duration: 3s;
+  }
+}
+
+/* ------------------------------------------------------------------------- *
+ * Buttons, inputs
+ * ------------------------------------------------------------------------- */
+
+.harness-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--harness-space-1);
+  padding: var(--harness-space-2) var(--harness-space-3);
+  border: 1px solid transparent;
+  border-radius: var(--harness-radius-sm);
+  background: var(--harness-color-surface);
+  color: var(--harness-color-text);
+  font: inherit;
+  font-size: var(--harness-font-size-sm);
+  line-height: 1.2;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+
+.harness-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.harness-btn-primary {
+  background: var(--harness-color-accent);
+  color: var(--harness-color-accent-text);
+}
+
+.harness-btn-primary:hover:not(:disabled) {
+  filter: brightness(1.06);
+}
+
+.harness-btn-neutral {
+  background: var(--harness-color-surface);
+  border-color: var(--harness-color-border);
+}
+
+.harness-btn-soft {
+  background: var(--harness-color-accent-soft);
+  border-color: var(--harness-color-border);
+  color: var(--harness-color-text);
+}
+
+.harness-btn-soft:hover:not(:disabled) {
+  border-color: var(--harness-color-accent);
+}
+
+.harness-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--harness-space-1);
+  border: 1px solid transparent;
+  border-radius: var(--harness-radius-sm);
+  background: transparent;
+  color: var(--harness-color-text-muted);
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.harness-icon-btn:hover:not(:disabled) {
+  background: var(--harness-color-hover);
+  color: var(--harness-color-text);
+}
+
+.harness-icon-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.harness-icon-btn-on {
+  color: var(--harness-color-accent);
+  background: var(--harness-color-accent-soft);
+}
+
+.harness-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--harness-color-text-muted);
+  font: inherit;
+  font-size: var(--harness-font-size-xs);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.harness-link:hover {
+  color: var(--harness-color-text);
+}
+
+.harness-input,
+.harness-select,
+.harness-textarea {
+  padding: var(--harness-space-2) var(--harness-space-3);
+  border: 1px solid var(--harness-color-border);
+  border-radius: var(--harness-radius-sm);
+  background: var(--harness-color-bg);
+  color: var(--harness-color-text);
+  font: inherit;
+  font-size: var(--harness-font-size-sm);
+}
+
+.harness-input:focus-visible,
+.harness-select:focus-visible,
+.harness-textarea:focus-visible,
+.harness-btn:focus-visible,
+.harness-icon-btn:focus-visible,
+.harness-resizer:focus-visible,
+.harness-tree-row:focus-visible,
+.harness-choice:focus-visible {
+  outline: 2px solid var(--harness-color-accent);
+  outline-offset: 1px;
+}
+
+.harness-select {
+  padding: var(--harness-space-1) var(--harness-space-2);
+  font-size: var(--harness-font-size-xs);
+  font-family: var(--harness-font-mono);
+}
+
+/* ------------------------------------------------------------------------- *
+ * Builder shell
+ * ------------------------------------------------------------------------- */
+
+.harness-builder {
+  display: flex;
+  flex-direction: column;
+}
+
+.harness-topbar {
+  display: flex;
+  align-items: center;
+  gap: var(--harness-space-3);
+  flex: 0 0 auto;
+  padding: var(--harness-space-2) var(--harness-space-3);
+  border-bottom: 1px solid var(--harness-color-border);
+  background: var(--harness-color-bg);
+}
+
+.harness-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--harness-space-2);
+  min-width: 0;
+  color: var(--harness-color-accent);
+}
+
+.harness-brand-name {
+  color: var(--harness-color-text);
+  font-weight: 600;
+  font-size: var(--harness-font-size-sm);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.harness-topbar > .harness-icon-btn {
+  margin-left: auto;
+}
+
+.harness-banner {
+  flex: 0 0 auto;
+  padding: var(--harness-space-2) var(--harness-space-3);
+  border-bottom: 1px solid var(--harness-color-border);
+  background: var(--harness-color-danger-soft);
+  color: var(--harness-color-danger);
+  font-size: var(--harness-font-size-xs);
+}
+
+.harness-panes {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  background: var(--harness-color-surface);
+}
+
+.harness-split {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+}
+
+.harness-pane {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  background: var(--harness-color-bg);
+}
+
+.harness-pane > * {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.harness-resizer {
+  flex: 0 0 6px;
+  border-left: 1px solid var(--harness-color-border);
+  border-right: 1px solid var(--harness-color-border);
+  background: var(--harness-color-surface);
+  cursor: col-resize;
+  touch-action: none;
+  transition: background-color 120ms ease;
+}
+
+.harness-resizer:hover,
+.harness-resizer:active {
+  background: var(--harness-color-accent-soft);
+}
+
+.harness-rail {
+  display: flex;
+  flex: 0 0 260px;
+  flex-direction: column;
+  min-height: 0;
+  overflow-y: auto;
+  border-left: 1px solid var(--harness-color-border);
+  border-right: 1px solid var(--harness-color-border);
+  background: var(--harness-color-bg);
+}
+
+.harness-rail > .harness-root {
+  height: auto;
+}
+
+/* ------------------------------------------------------------------------- *
+ * Chat
+ * ------------------------------------------------------------------------- */
+
+.harness-chat {
+  display: flex;
+  flex-direction: column;
+}
+
+.harness-chat-log {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: var(--harness-space-3);
+  min-height: 0;
+  padding: var(--harness-space-4);
+  overflow-y: auto;
+}
+
+.harness-chat-loading,
+.harness-panel-empty {
+  padding: var(--harness-space-3) 0;
+}
+
+.harness-empty {
+  padding: var(--harness-space-4) 0;
+}
+
+.harness-empty-title {
+  margin: 0 0 var(--harness-space-2);
+  font-weight: 600;
+}
+
+.harness-empty-body {
+  margin: 0;
+  color: var(--harness-color-text-muted);
+  font-size: var(--harness-font-size-sm);
+}
+
+.harness-user-row {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.harness-user-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--harness-space-2);
+  max-width: 82%;
+}
+
+.harness-bubble {
+  padding: var(--harness-space-2) var(--harness-space-3);
+  border-radius: var(--harness-radius-md);
+  background: var(--harness-color-accent);
+  color: var(--harness-color-accent-text);
+  font-size: var(--harness-font-size-sm);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.harness-assistant {
+  font-size: var(--harness-font-size-sm);
+  overflow-wrap: anywhere;
+}
+
+.harness-assistant-error {
+  padding: var(--harness-space-2) var(--harness-space-3);
+  border: 1px solid var(--harness-color-border);
+  border-left: 3px solid var(--harness-color-danger);
+  border-radius: var(--harness-radius-sm);
+  background: var(--harness-color-danger-soft);
+}
+
+.harness-tool {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: var(--harness-space-2);
+  padding: var(--harness-space-1) var(--harness-space-2);
+  border: 1px solid transparent;
+  border-radius: var(--harness-radius-sm);
+  color: var(--harness-color-text-muted);
+  font-size: var(--harness-font-size-xs);
+}
+
+.harness-tool-running {
+  border-color: var(--harness-color-border);
+  background: var(--harness-color-surface);
+}
+
+.harness-tool-done {
+  color: var(--harness-color-accent);
+}
+
+.harness-activity {
+  display: flex;
+  align-items: center;
+  gap: var(--harness-space-2);
+  color: var(--harness-color-text-muted);
+  font-size: var(--harness-font-size-sm);
+}
+
+.harness-plan-notice {
+  align-self: center;
+  color: var(--harness-color-text-muted);
+  font-size: var(--harness-font-size-xs);
+  text-align: center;
+}
+
+.harness-notice {
+  display: flex;
+  align-items: center;
+  gap: var(--harness-space-2);
+  padding: var(--harness-space-2) var(--harness-space-3);
+  border-top: 1px solid var(--harness-color-border);
+  background: var(--harness-color-danger-soft);
+  color: var(--harness-color-text);
+  font-size: var(--harness-font-size-xs);
+}
+
+.harness-notice > span {
+  flex: 1 1 auto;
+}
+
+.harness-readonly {
+  padding: var(--harness-space-3);
+  border-top: 1px solid var(--harness-color-border);
+  color: var(--harness-color-text-muted);
+  font-size: var(--harness-font-size-xs);
+  text-align: center;
+}
+
+/* Composer */
+
+.harness-composer {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: var(--harness-space-2);
+  padding: var(--harness-space-3);
+  border-top: 1px solid var(--harness-color-border);
+  background: var(--harness-color-bg);
+}
+
+.harness-composer-row {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--harness-space-2);
+}
+
+.harness-composer-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--harness-space-2);
+}
+
+.harness-textarea {
+  flex: 1 1 auto;
+  min-height: 38px;
+  max-height: 240px;
+  resize: none;
+  overflow-y: auto;
+  line-height: 1.45;
+}
+
+.harness-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--harness-space-2);
+}
+
+.harness-attachments-end {
+  justify-content: flex-end;
+}
+
+.harness-attachment {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--harness-space-1);
+  max-width: 220px;
+  padding: var(--harness-space-1) var(--harness-space-2);
+  border: 1px solid var(--harness-color-border);
+  border-radius: var(--harness-radius-sm);
+  background: var(--harness-color-surface);
+  color: var(--harness-color-text);
+  font-size: var(--harness-font-size-xs);
+}
+
+.harness-attachment-name {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.harness-attachment-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: var(--harness-radius-sm);
+  object-fit: cover;
+}
+
+.harness-attachment-image {
+  max-height: 140px;
+  max-width: 100%;
+  border: 1px solid var(--harness-color-border);
+  border-radius: var(--harness-radius-sm);
+}
+
+/* Plan-mode choices */
+
+.harness-choices {
+  margin: var(--harness-space-2) 0;
+  padding: var(--harness-space-3);
+  border: 1px solid var(--harness-color-border);
+  border-radius: var(--harness-radius-md);
+  background: var(--harness-color-surface);
+}
+
+.harness-choices-loading {
+  height: 72px;
+  margin: var(--harness-space-2) 0;
+  border: 1px solid var(--harness-color-border);
+  border-radius: var(--harness-radius-md);
+  background: var(--harness-color-surface);
+  opacity: 0.6;
+}
+
+.harness-choices-question {
+  margin-bottom: var(--harness-space-2);
+  font-weight: 600;
+  font-size: var(--harness-font-size-sm);
+}
+
+.harness-choices-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--harness-space-2);
+}
+
+.harness-choice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--harness-space-2);
+  width: 100%;
+  padding: var(--harness-space-2) var(--harness-space-3);
+  border: 1px solid var(--harness-color-border);
+  border-radius: var(--harness-radius-sm);
+  background: var(--harness-color-bg);
+  color: var(--harness-color-text);
+  font: inherit;
+  font-size: var(--harness-font-size-sm);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+.harness-choice:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.harness-choice:hover:not(:disabled) {
+  border-color: var(--harness-color-accent);
+}
+
+.harness-choice-on {
+  border-color: var(--harness-color-accent);
+  background: var(--harness-color-accent-soft);
+  opacity: 1;
+}
+
+.harness-choice-label {
+  font-weight: 600;
+}
+
+.harness-checkbox {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  border: 1px solid var(--harness-color-border);
+  border-radius: var(--harness-radius-sm);
+  background: var(--harness-color-bg);
+  color: var(--harness-color-accent);
+}
+
+.harness-choices-other {
+  display: flex;
+  gap: var(--harness-space-2);
+}
+
+.harness-choices-other .harness-input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.harness-choices-footer {
+  margin-top: var(--harness-space-3);
+  padding-top: var(--harness-space-2);
+  border-top: 1px solid var(--harness-color-border);
+  text-align: right;
+}
+
+/* Markdown */
+
+.harness-md > :first-child {
+  margin-top: 0;
+}
+
+.harness-md > :last-child {
+  margin-bottom: 0;
+}
+
+.harness-md-p {
+  margin: 0 0 var(--harness-space-2);
+  white-space: pre-wrap;
+}
+
+.harness-md-h {
+  margin: var(--harness-space-3) 0 var(--harness-space-2);
+  font-size: var(--harness-font-size-base);
+}
+
+.harness-md-list {
+  margin: 0 0 var(--harness-space-2);
+  padding-left: var(--harness-space-4);
+}
+
+.harness-md a {
+  color: var(--harness-color-accent);
+}
+
+.harness-code-inline {
+  padding: 1px 4px;
+  border-radius: var(--harness-radius-sm);
+  background: var(--harness-color-surface);
+  font-family: var(--harness-font-mono);
+  font-size: var(--harness-font-size-xs);
+}
+
+.harness-code-block {
+  margin: 0 0 var(--harness-space-2);
+  padding: var(--harness-space-2);
+  border: 1px solid var(--harness-color-border);
+  border-radius: var(--harness-radius-sm);
+  background: var(--harness-color-surface);
+  font-family: var(--harness-font-mono);
+  font-size: var(--harness-font-size-xs);
+  white-space: pre;
+  overflow-x: auto;
+}
+
+/* ------------------------------------------------------------------------- *
+ * Preview
+ * ------------------------------------------------------------------------- */
+
+.harness-preview {
+  display: flex;
+  flex-direction: column;
+}
+
+.harness-preview-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--harness-space-2);
+  flex: 0 0 auto;
+  padding: var(--harness-space-2) var(--harness-space-3);
+  border-bottom: 1px solid var(--harness-color-border);
+  background: var(--harness-color-surface);
+  font-size: var(--harness-font-size-xs);
+}
+
+.harness-preview-title {
+  color: var(--harness-color-text);
+  font-weight: 600;
+}
+
+.harness-preview-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--harness-space-1);
+  color: var(--harness-color-accent);
+}
+
+.harness-preview-rebuild {
+  margin-left: auto;
+}
+
+.harness-preview-frame {
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 0;
+  border: 0;
+  background: #ffffff;
+}
+
+.harness-preview-error {
+  flex: 0 0 auto;
+  max-height: 40%;
+  overflow-y: auto;
+  border-top: 1px solid var(--harness-color-border);
+  background: var(--harness-color-danger-soft);
+}
+
+.harness-preview-error-head {
+  display: flex;
+  align-items: center;
+  gap: var(--harness-space-2);
+  padding: var(--harness-space-2) var(--harness-space-3);
+}
+
+.harness-preview-error-title {
+  flex: 1 1 auto;
+  color: var(--harness-color-danger);
+  font-weight: 600;
+  font-size: var(--harness-font-size-xs);
+}
+
+.harness-preview-error-body {
+  margin: 0;
+  padding: 0 var(--harness-space-3) var(--harness-space-3);
+  color: var(--harness-color-text);
+  font-family: var(--harness-font-mono);
+  font-size: var(--harness-font-size-xs);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* ------------------------------------------------------------------------- *
+ * File explorer and versions
+ * ------------------------------------------------------------------------- */
+
+.harness-files,
+.harness-versions {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.harness-versions {
+  border-top: 1px solid var(--harness-color-border);
+}
+
+.harness-panel-head {
+  display: flex;
+  align-items: center;
+  gap: var(--harness-space-2);
+  padding: var(--harness-space-2) var(--harness-space-3);
+  border-bottom: 1px solid var(--harness-color-border);
+  background: var(--harness-color-surface);
+}
+
+.harness-panel-title {
+  font-weight: 600;
+  font-size: var(--harness-font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.harness-panel-empty,
+.harness-panel-note {
+  padding: var(--harness-space-3);
+  color: var(--harness-color-text-muted);
+  font-size: var(--harness-font-size-xs);
+  margin: 0;
+}
+
+.harness-tree {
+  display: flex;
+  flex-direction: column;
+  padding: var(--harness-space-1) 0;
+  overflow-y: auto;
+}
+
+.harness-tree-row {
+  display: flex;
+  align-items: center;
+  gap: var(--harness-space-2);
+  width: 100%;
+  padding: var(--harness-space-1) var(--harness-space-2);
+  border: 0;
+  background: none;
+  color: var(--harness-color-text);
+  font: inherit;
+  font-size: var(--harness-font-size-xs);
+  text-align: left;
+  cursor: pointer;
+}
+
+.harness-tree-row:hover {
+  background: var(--harness-color-hover);
+}
+
+.harness-tree-row-on {
+  background: var(--harness-color-accent-soft);
+}
+
+.harness-tree-name {
+  flex: 1 1 auto;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.harness-chevron {
+  flex: 0 0 auto;
+  color: var(--harness-color-text-muted);
+  transition: transform 120ms ease;
+}
+
+.harness-chevron-open {
+  transform: rotate(90deg);
+}
+
+.harness-chevron-spacer {
+  flex: 0 0 12px;
+}
+
+.harness-change-dot {
+  flex: 0 0 auto;
+  width: 6px;
+  height: 6px;
+  border: 1px solid var(--harness-color-accent);
+  border-radius: 50%;
+}
+
+.harness-change-dot-latest {
+  background: var(--harness-color-accent);
+}
+
+.harness-file-view {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-top: 1px solid var(--harness-color-border);
+}
+
+.harness-file-view-head {
+  display: flex;
+  align-items: center;
+  gap: var(--harness-space-2);
+  padding: var(--harness-space-2) var(--harness-space-3);
+  background: var(--harness-color-surface);
+  font-size: var(--harness-font-size-xs);
+}
+
+.harness-file-view-path {
+  flex: 1 1 auto;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.harness-file-source {
+  max-height: 320px;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  overflow: auto;
+}
+
+.harness-undo-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--harness-space-2);
+  padding: var(--harness-space-2) var(--harness-space-3);
+  border-bottom: 1px solid var(--harness-color-border);
+  background: var(--harness-color-accent-soft);
+  font-size: var(--harness-font-size-xs);
+}
+
+.harness-undo-bar > span {
+  flex: 1 1 auto;
+}
+
+.harness-version-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--harness-space-1);
+  margin: 0;
+  padding: var(--harness-space-2);
+  list-style: none;
+  overflow-y: auto;
+}
+
+.harness-version {
+  display: flex;
+  align-items: center;
+  gap: var(--harness-space-2);
+  padding: var(--harness-space-1) var(--harness-space-2);
+  border-radius: var(--harness-radius-sm);
+}
+
+.harness-version:hover {
+  background: var(--harness-color-hover);
+}
+
+.harness-version-meta {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.harness-version-label {
+  font-size: var(--harness-font-size-xs);
+  font-weight: 600;
+}
+
+/* ------------------------------------------------------------------------- *
+ * Narrow embeds
+ * ------------------------------------------------------------------------- */
+
+@media (max-width: 720px) {
+  .harness-panes {
+    flex-direction: column;
+  }
+
+  .harness-split {
+    flex-direction: column;
+  }
+
+  /* The drag fraction is an inline style, so stacking has to out-specify it. */
+  .harness-pane {
+    flex: 1 1 50% !important;
+  }
+
+  .harness-resizer {
+    display: none;
+  }
+
+  .harness-rail {
+    flex: 0 0 auto;
+    max-height: 40%;
   }
 }

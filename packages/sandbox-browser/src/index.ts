@@ -16,9 +16,17 @@
 
 import type { Bundler, BundlerCaps, BundleResult, FileMap } from '@speculos-harness/protocol';
 
-/** Placeholder message: the browser build path is not enabled yet. */
+/**
+ * The message a caller gets if they wire this bundler in today. It names the gate
+ * (bundler parity, proven by the shared conformance suite) and the thing to use
+ * instead, because "not implemented" on its own tells nobody what to do next.
+ */
 const NOT_IMPLEMENTED =
-  '@speculos-harness/sandbox-browser: the browser build path is not enabled yet - use the server bundler';
+  '@speculos-harness/sandbox-browser: the in-browser build path is a roadmap item and is not ' +
+  'implemented yet. It ships once a shared bundler conformance suite proves parity with the ' +
+  'server bundler, so until then `/capabilities` advertises `sandbox.location: "server"` only. ' +
+  'Use the build service (@speculos-harness/bundler, the `speculos/harness-bundler` container) ' +
+  'and leave `useHarnessPreview({ bundle })` unset to get its default.';
 
 /** Options for {@link createBrowserBundler}. */
 export interface BrowserBundlerOptions {
@@ -47,14 +55,25 @@ export const BROWSER_BUNDLER_CAPS: BundlerCaps = {
  * Create an in-browser {@link Bundler}. Wire the result into
  * `useHarnessPreview({ bundle })` to drop the Bun sidecar for frontend-only apps.
  *
- * TODO: esbuild-wasm bundling with the CDN import-resolution plugin, the pinned
- * dependency set, and the automatic JSX runtime - behind a green shared bundler
- * conformance suite before it is advertised as equivalent.
+ * Not implemented yet, on purpose - see the module note above and
+ * [ROADMAP.md](../../../ROADMAP.md). The constructor returns a real object so a host can
+ * still read {@link BROWSER_BUNDLER_CAPS} off it, and {@link Bundler.bundle} rejects with
+ * an explanation naming the server bundler to use instead. What is missing is the
+ * esbuild-wasm build with a CDN import-resolution plugin, the pinned dependency set, and
+ * the automatic JSX runtime - none of it turned on until the shared bundler conformance
+ * suite (the same files, runnable output from both bundlers) is green.
  */
 export function createBrowserBundler(_opts?: BrowserBundlerOptions): Bundler {
   return {
     caps: BROWSER_BUNDLER_CAPS,
-    bundle(_files: FileMap, _deps: Record<string, string>, _signal?: AbortSignal): Promise<BundleResult> {
+    // `async` so the failure arrives as a rejected promise rather than a synchronous
+    // throw: a caller who wrote `bundle(...).catch(...)` should not need a try/catch
+    // around the call as well.
+    async bundle(
+      _files: FileMap,
+      _deps: Record<string, string>,
+      _signal?: AbortSignal,
+    ): Promise<BundleResult> {
       throw new Error(NOT_IMPLEMENTED);
     },
   };

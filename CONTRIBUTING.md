@@ -11,19 +11,33 @@ Thanks for looking. Speculos Harness is the production engine behind [Speculos](
 
 ## Build and test
 
-Python side - this is what CI runs on every PR:
+The agent kit, including an end-to-end drive of the router with a scripted model:
 
 ```bash
 pip install -e "py/speculos_harness[dev]"
 pytest py/speculos_harness/tests
 ```
 
-TypeScript side:
+The bundle test needs a running build service and skips without one. To include it,
+start the service first and point the suite at it:
 
 ```bash
-pnpm install
-pnpm -r --if-present build
-pnpm -r --if-present test
+docker compose up -d bundler
+BUNDLER_URL=http://127.0.0.1:8081 pytest py/speculos_harness/tests
+```
+
+TypeScript - either package manager works, the workspace resolves locally:
+
+```bash
+npm install          # or: pnpm install
+npx tsc --noEmit     # typechecks every package
+```
+
+The preview package carries its own self-check, including the sandbox escaping
+rules. It is worth running after any change to the iframe host:
+
+```bash
+bun run packages/preview/src/self-check.ts
 ```
 
 A change to the wire protocol needs a matching change on both sides: the spec in [`spec/`](./spec), the TypeScript types in [`packages/protocol`](./packages/protocol), and the Python protocols in the agent kit. A PR that moves one without the others will get sent back.

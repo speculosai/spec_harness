@@ -22,8 +22,8 @@
     "*.css"
   ],
   "dependencies": {
-    "@speculos-harness/protocol": "workspace:*",
-    "@speculos-harness/preview": "workspace:*"
+    "@speculos-harness/protocol": "^0.1.0",
+    "@speculos-harness/preview": "^0.1.0"
   },
   "peerDependencies": {
     "react": ">=18",

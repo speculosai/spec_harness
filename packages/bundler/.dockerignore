@@ -1,0 +1,24 @@
+# Only src/ is copied into the image, and the working directory's package.json is
+# generated from BASE_DEPENDENCIES rather than copied - the service's own manifest
+# would declare a workspace dependency that does not exist inside the container.
+# Everything below is excluded so it can never end up in a layer by accident.
+
+node_modules
+.builds
+dist
+build
+*.log
+*.tsbuildinfo
+
+# The service manifest and docs: not part of the runtime image.
+package.json
+README.md
+Dockerfile
+.dockerignore
+
+# VCS / editor / OS noise
+.git
+.gitignore
+.vscode
+.idea
+.DS_Store

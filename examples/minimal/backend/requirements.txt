@@ -1,7 +1,9 @@
 # Minimal Speculos Harness backend - dependencies.
-
-# The mountable agent router + adapter interfaces.
-speculos-harness
+#
+# The agent kit, installed from this checkout. Once it is on PyPI this becomes a
+# plain `speculos-harness`. The compose build installs it from source the same
+# way, which is why a fresh clone runs without anything being published first.
+-e ../../../py/speculos_harness
 
 # The ASGI server used to run this example. Any ASGI server works.
 uvicorn[standard]>=0.29

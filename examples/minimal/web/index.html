@@ -4,6 +4,23 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Northwind - build a tool</title>
+    <style>
+      /*
+       * The workspace fills its container (`.harness-root` is `height: 100%`), so the
+       * container needs a height of its own. This is the only styling the example
+       * owns - everything else comes from @speculos-harness/react's CSS custom
+       * properties, which is where you would restyle it to your design system.
+       */
+      html,
+      body,
+      #root {
+        height: 100%;
+      }
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
