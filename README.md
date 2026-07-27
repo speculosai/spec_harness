@@ -48,9 +48,9 @@ The builder is a few moving parts:
 - **Plan mode.** For larger changes, the agent proposes an approach with clickable choices before it writes code.
 - **CSV and screenshot starts.** Start a build from a spreadsheet or a screenshot.
 
-Also in the loop: fast rebuilds, a readable step log, context that survives between sessions, and prompt caching that keeps cost per build flat.
+Also: fast rebuilds, a readable step log, context that survives between sessions, and prompt caching that keeps cost per build flat.
 
-**Coming to the core:** read-only share links, and background jobs - schedules, resumable runs, and durable state, so an app keeps working with the tab closed.
+**Coming next:** sandboxes for background jobs, shareable public links that don't require company authentication
 
 The rest of the list is in [ROADMAP.md](./ROADMAP.md).
 
