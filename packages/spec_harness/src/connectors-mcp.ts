@@ -1,5 +1,5 @@
 /**
- * @speculos-harness/connectors-mcp
+ * @speculosai/spec_harness/connectors-mcp
  *
  * The reference MCP connector - the TypeScript client half (the bridge handler and the
  * in-iframe resolver shim). The server half (agent tools + the parent-side data fetch)
@@ -18,12 +18,12 @@
  * credential and resolves the caller's `Principal` scope.
  */
 
-import { BRIDGE_TIMEOUT_MS, DEFAULT_NAMESPACE } from '@speculos-harness/protocol';
+import { BRIDGE_TIMEOUT_MS, DEFAULT_NAMESPACE } from './protocol';
 import type {
   ConnectorProvider,
   ConnectorSummary,
   RuntimeContext,
-} from '@speculos-harness/protocol';
+} from './protocol';
 
 /**
  * The bridge message kind this connector answers: an app posting `<ns>-mcp` reaches the
@@ -138,7 +138,7 @@ function hostOf(url: string): string | undefined {
  * installs the two globals itself if they are missing. Both installers are idempotent,
  * which is what makes including this N times free.
  *
- * It is the same preamble as `@speculos-harness/preview`'s `bridgePreamble()` and
+ * It is the same preamble as `@speculosai/spec_harness/preview`'s `bridgePreamble()` and
  * `speculos_harness.connectors._bridge.bridge_preamble()`. Duplicated rather than
  * imported because the layering rule is that an adapter depends on the protocol package
  * and nothing else - but the three MUST stay semantically identical, or a shim

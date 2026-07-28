@@ -8,7 +8,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
-import type { Attachment, ChatMessage, Project, ToolResultOutput } from '@speculos-harness/protocol';
+import type { Attachment, ChatMessage, Project, ToolResultOutput } from '../protocol';
 
 import { errorMessageOf, useHarness } from './context';
 import { historyToItems, isMutatingTool, isToolItem, parseArgs } from './items';

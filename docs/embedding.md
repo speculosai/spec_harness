@@ -6,9 +6,18 @@ white-label it, embed it across origins, and offer read-only views. The backend
 side - models, the instructions brief, connectors, metering - is in
 [Configuration](./configuration.md); this page is the browser half.
 
-Everything here is `@speculos-harness/react`. Its exact types live in that
-package and in [`packages/protocol`](../packages/protocol/); when this guide and
-those types disagree, the types win.
+Everything here is `@speculosai/spec_harness`, the one npm package the frontend
+ships as. Its exact types live in that package and at its
+[`/protocol`](../packages/spec_harness/src/protocol.ts) entry point; when this
+guide and those types disagree, the types win.
+
+| Import | What it is |
+|---|---|
+| `@speculosai/spec_harness` | The workspace: `HarnessProvider`, `Builder`, the standalone panes, and the headless hooks. Everything on this page unless noted. |
+| `@speculosai/spec_harness/protocol` | The wire-protocol types, constants, and adapter interfaces. No runtime dependencies. |
+| `@speculosai/spec_harness/preview` | The framework-agnostic sandboxed iframe host, if you are not on React. |
+| `@speculosai/spec_harness/connectors-mcp` | The browser half of the MCP connector - see [Connectors](./connectors.md). |
+| `@speculosai/spec_harness/styles.css` | The default stylesheet - see [Styling](#styling-with-css-custom-properties). |
 
 ## The 90% case: one provider, one component
 
@@ -16,8 +25,8 @@ Whole-UI adoption is the common path. `<HarnessProvider>` supplies configuration
 to everything beneath it; `<Builder>` is the workspace.
 
 ```tsx
-import { HarnessProvider, Builder } from '@speculos-harness/react'
-import '@speculos-harness/react/styles.css'
+import { HarnessProvider, Builder } from '@speculosai/spec_harness'
+import '@speculosai/spec_harness/styles.css'
 
 <HarnessProvider baseUrl="/api/builder" namespace="app" auth={{ getHeaders }}>
   <Builder projectId={project.id} layout="preview-left" filePanel="explorer" />
@@ -119,7 +128,7 @@ protocol, the state, and the streaming. This is also the proof the core is
 genuinely headless: `<Builder>` is built on exactly these.
 
 ```tsx
-import { useHarnessChat, useHarnessPreview, useHarnessFiles } from '@speculos-harness/react'
+import { useHarnessChat, useHarnessPreview, useHarnessFiles } from '@speculosai/spec_harness'
 
 function CustomBuilder({ projectId }: { projectId: string }) {
   const chat = useHarnessChat({ projectId })
@@ -182,7 +191,7 @@ The workspace speaks entirely in your product's language, without a fork.
 
 ## Styling with CSS custom properties
 
-The default stylesheet (`@speculos-harness/react/styles.css`) is built on CSS
+The default stylesheet (`@speculosai/spec_harness/styles.css`) is built on CSS
 custom properties. Override the tokens and the whole workspace adopts your
 design system - no forking, no `!important`, no shadow-DOM surgery.
 

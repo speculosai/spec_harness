@@ -85,7 +85,7 @@ A connector has a client half too - the bridge/shim that lets the preview iframe
 talk to the parent page. Pass the client halves to `<HarnessProvider connectors>`:
 
 ```tsx
-import { mcpConnector } from '@speculos-harness/connectors-mcp'
+import { mcpConnector } from '@speculosai/spec_harness/connectors-mcp'
 
 <HarnessProvider
   baseUrl="/api/builder"

@@ -12,7 +12,7 @@
 
 import { useCallback, useRef, useState } from 'react';
 import type { PointerEvent as ReactPointerEvent, ReactElement } from 'react';
-import { PROTOCOL_VERSION } from '@speculos-harness/protocol';
+import { PROTOCOL_VERSION } from '../protocol';
 
 import { ChatPane } from './ChatPane';
 import { FileExplorer } from './FileExplorer';

@@ -8,8 +8,8 @@
  * silently drops every CSV from every pre-rename conversation on reload.
  */
 
-import { CSV_PART, LEGACY_CSV_PART, MUTATING_TOOLS } from '@speculos-harness/protocol';
-import type { Attachment, ChatMessage, ToolResultOutput } from '@speculos-harness/protocol';
+import { CSV_PART, LEGACY_CSV_PART, MUTATING_TOOLS } from '../protocol';
+import type { Attachment, ChatMessage, ToolResultOutput } from '../protocol';
 
 import type { Translate } from './strings';
 

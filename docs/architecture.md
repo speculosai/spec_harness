@@ -9,16 +9,20 @@ AI-written code in. This page is the mental model; the normative details are in
 Speculos Harness is three deliverables you assemble, each with a working
 default:
 
-- **The frontend** (`@speculos-harness/react`) - the workspace: a chat panel, a
-  live sandboxed preview, a read-only file explorer, and a version timeline. It
-  runs in the user's browser, inside your product.
+- **The frontend** (`@speculosai/spec_harness`, npm) - the workspace: a chat
+  panel, a live sandboxed preview, a read-only file explorer, and a version
+  timeline. It runs in the user's browser, inside your product. One package, with
+  subpath entry points for the pieces you may want on their own: `/protocol` (the
+  wire types), `/preview` (the iframe host, if you are not on React),
+  `/connectors-mcp`, and `/styles.css`.
 - **The agent kit** (`speculos-harness`, pip) - a FastAPI router you mount. It
   runs the agent loop: it calls the model, executes file tools, and streams the
   work back. This is the production engine behind Speculos, packaged - one loop,
   in one language, on the revenue path.
-- **The build service** (`speculos/harness-bundler`) - a locked-down container
+- **The build service** (`speculosai/harness-bundler`) - a locked-down container
   that turns `{files, deps}` into browser-ready `{code, css}`. The agent calls
-  it every time a file changes.
+  it every time a file changes. It is a service you run, not a package you
+  import; its source is in `packages/bundler/`.
 
 Around the agent sit the adapters - storage, the model layer, auth, connectors,
 telemetry - each an interface with a default you can replace (see
@@ -29,7 +33,7 @@ telemetry - each an interface with a default you can replace (see
 ```mermaid
 flowchart TB
   subgraph browser["Browser - your product"]
-    builder["&lt;Builder&gt; (@speculos-harness/react)<br/>chat pane · preview pane · file explorer · version timeline"]
+    builder["&lt;Builder&gt; (@speculosai/spec_harness)<br/>chat pane · preview pane · file explorer · version timeline"]
     iframe["null-origin srcdoc iframe<br/>the generated app runs here"]
     builder -->|"srcDoc + fixed sandbox attrs"| iframe
     iframe -. "postMessage bridge (window.&lt;ns&gt; RPC, 60s timeout)" .-> builder
@@ -48,7 +52,7 @@ flowchart TB
     tel["TelemetrySink"]
   end
 
-  bundler["Build service<br/>speculos/harness-bundler<br/>{files,deps} -> {code,css}"]
+  bundler["Build service<br/>speculosai/harness-bundler<br/>{files,deps} -> {code,css}"]
   llm["LLM<br/>via LiteLLMProvider"]
 
   builder -->|"chat SSE · bundle · reads (Harness-Protocol: 1)"| router
@@ -172,4 +176,4 @@ party can implement either side from the spec alone and interoperate. It is also
 how the client adapts to different backends - it asks `GET /capabilities` what a
 server supports and adjusts its UI - with no per-server client code. The
 contract lives in [`spec/`](../spec/); the types that pin it are in
-[`packages/protocol`](../packages/protocol/).
+[`@speculosai/spec_harness/protocol`](../packages/spec_harness/src/protocol.ts).

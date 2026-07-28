@@ -10,17 +10,7 @@
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "noEmit": true,
-    "types": ["node"],
-
-    // Running inside the Speculos Harness repository, typecheck against the
-    // packages' sources. A mapping whose target does not exist falls through to
-    // normal node resolution, so this block is inert once the example is copied
-    // out and the published packages are what resolve.
-    "paths": {
-      "@speculos-harness/react": ["../../../packages/react/src/index.tsx"],
-      "@speculos-harness/preview": ["../../../packages/preview/src/index.ts"],
-      "@speculos-harness/protocol": ["../../../packages/protocol/src/index.ts"]
-    }
+    "types": ["node"]
   },
   "include": ["*.ts", "*.tsx", "vite-env.d.ts"]
 }

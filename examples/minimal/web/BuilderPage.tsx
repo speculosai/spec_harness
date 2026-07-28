@@ -13,10 +13,10 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import { HarnessProvider, Builder } from '@speculos-harness/react';
-import '@speculos-harness/react/styles.css';
-import { PROTOCOL_HEADER, PROTOCOL_VERSION } from '@speculos-harness/protocol';
-import type { Project } from '@speculos-harness/protocol';
+import { HarnessProvider, Builder } from '@speculosai/spec_harness';
+import '@speculosai/spec_harness/styles.css';
+import { PROTOCOL_HEADER, PROTOCOL_VERSION } from '@speculosai/spec_harness/protocol';
+import type { Project } from '@speculosai/spec_harness/protocol';
 
 import { NorthwindLogo } from './NorthwindLogo';
 

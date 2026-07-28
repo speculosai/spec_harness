@@ -8,7 +8,7 @@
 
 import { useCallback, useMemo, useState } from 'react';
 import type { ReactElement } from 'react';
-import type { Snapshot } from '@speculos-harness/protocol';
+import type { Snapshot } from '../protocol';
 
 import { useHarness } from './context';
 import { RestoreIcon, SpinnerIcon } from './icons';

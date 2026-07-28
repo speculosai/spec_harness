@@ -19,7 +19,7 @@ Users describe the tool they need. The agent builds it against their real data, 
 
 This is the engine behind [Speculos](https://speculos.ai/cloud-demo), running in production today. Same code, open source.
 
-It ships as three pieces: an npm frontend, a Python backend router, and a build-service container. Each has a working default, so a builder stands up before any customization. Every default swaps for your own storage, auth, models, and design system.
+It ships as three pieces: one npm frontend package, a Python backend router, and a build-service container. Each has a working default, so a builder stands up before any customization. Every default swaps for your own storage, auth, models, and design system.
 
 ---
 
@@ -58,13 +58,13 @@ The rest of the list is in [ROADMAP.md](./ROADMAP.md).
 
 ## Drop it into your product
 
-### 1. Frontend - `@speculos-harness/react`
+### 1. Frontend - `@speculosai/spec_harness`
 
 One provider, one component.
 
 ```tsx
-import { HarnessProvider, Builder } from '@speculos-harness/react'
-import '@speculos-harness/react/styles.css'
+import { HarnessProvider, Builder } from '@speculosai/spec_harness'
+import '@speculosai/spec_harness/styles.css'
 
 <HarnessProvider baseUrl="/api/builder" namespace="app" auth={{ getHeaders }}>
   <Builder
@@ -76,6 +76,8 @@ import '@speculos-harness/react/styles.css'
 ```
 
 `<ChatPane>`, `<PreviewPane>`, `<FileExplorer>`, and `<VersionTimeline>` are exported on their own - put the chat in a drawer and the preview in a modal, and they keep talking to each other. Headless hooks (`useHarnessChat`, `useHarnessPreview`, `useHarnessFiles`) own the protocol, state, and streaming if you bring your own layout. `brand` and `strings` props rename every label; the stylesheet is CSS custom properties, so your tokens restyle the whole builder.
+
+One install covers the whole frontend. The rest of it hangs off subpath entry points of the same package: `/protocol` for the wire types and adapter interfaces, `/preview` for the framework-agnostic iframe host if you are not on React, `/connectors-mcp` for the browser half of the MCP connector, and `/styles.css` for the default stylesheet.
 
 ### 2. Backend - `speculos-harness` (pip)
 
@@ -97,14 +99,14 @@ app.include_router(agent.router, prefix="/api/builder")
 
 The router mounts `/chat` (SSE), `/bundle/{id}`, `/projects` (with snapshots and rollback), `/capabilities`, and `/connectors/{kind}`.
 
-### 3. Build service - `speculos/harness-bundler`
+### 3. Build service - `speculosai/harness-bundler`
 
-A container: `{files, deps}` in, bundled `{code, css}` out. The builder calls it on every file change; that is what makes the preview live.
+A container: `{files, deps}` in, bundled `{code, css}` out. The builder calls it on every file change; that is what makes the preview live. It is a service you run, not a package you import.
 
 ```yaml
 # docker-compose.yml
 bundler:
-  image: speculos/harness-bundler
+  image: speculosai/harness-bundler
 ```
 
 One React component, one mounted router, one sidecar. That is the whole integration.
@@ -212,7 +214,7 @@ Modules are how we work with design partners: our AI-native engineers implement 
 
 ## Repo map
 
-A pnpm-workspace monorepo with the Python package under `py/`. One-way layering: `@speculos-harness/protocol` depends on nothing; adapters depend only on the protocol; the React UI and the agent kit depend on both.
+A pnpm-workspace monorepo with the Python package under `py/`. The whole frontend is one npm package, `@speculosai/spec_harness`, with subpath entry points. Layering inside it runs one way: the `/protocol` entry depends on nothing, the adapter entries (`/preview`, `/connectors-mcp`, `/sandbox-browser`) depend only on the protocol, and the React workspace depends on the protocol and the preview host. The agent kit depends on the protocol as its Python mirror.
 
 ```
 spec_harness/
@@ -224,13 +226,16 @@ spec_harness/
 │   ├── security.md            #   null-origin iframe, --ignore-scripts, auth modes, CORS, CSP
 │   └── schema/                #   JSON Schema for the wire types
 │
-├── packages/                  # TypeScript / npm
-│   ├── protocol/              #   @speculos-harness/protocol - types + JSON schema + conformance kit
-│   ├── react/                 #   @speculos-harness/react - <Builder>, panes, hooks
-│   ├── preview/               #   @speculos-harness/preview - iframe host + bridge
-│   ├── bundler/               #   @speculos-harness/bundler - the build-service sidecar
-│   ├── sandbox-browser/       #   @speculos-harness/sandbox-browser - optional in-browser bundler
-│   └── connectors-mcp/        #   @speculos-harness/connectors-mcp - reference connector
+├── packages/                  # TypeScript
+│   ├── spec_harness/          #   @speculosai/spec_harness - the one npm package
+│   │                          #     .                 <Builder>, panes, hooks
+│   │                          #     /protocol         types + JSON schema + conformance kit
+│   │                          #     /preview          iframe host + bridge
+│   │                          #     /connectors-mcp   reference connector
+│   │                          #     /sandbox-browser  optional in-browser bundler
+│   │                          #     /styles.css       the default stylesheet
+│   └── bundler/               #   the build service - ships as the container image
+│                              #   speculosai/harness-bundler, not published to npm
 │
 ├── py/
 │   └── speculos_harness/      # pip: speculos-harness - the FastAPI router

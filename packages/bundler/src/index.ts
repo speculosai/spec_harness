@@ -1,5 +1,5 @@
 /**
- * @speculos-harness/bundler
+ * speculosai/harness-bundler (the build-service image)
  *
  * The build-service sidecar: it takes a project's files and dependencies and returns
  * bundled, browser-ready code and CSS - `{files, deps}` in, `{code, css}` out. The
@@ -7,7 +7,7 @@
  * the agent writes, the service rebuilds, the sandbox refreshes. There is no "run"
  * button because a rebuild is fast enough not to need one.
  *
- * It ships as the locked-down container image `speculos/harness-bundler` (see
+ * It ships as the locked-down container image `speculosai/harness-bundler` (see
  * `Dockerfile`) and runs ONLY that way: `bun add` runs arbitrary npm on a box that
  * resolves the app's imports against its own `node_modules`, so it enforces non-root,
  * `--ignore-scripts`, a name/version regex, and an ephemeral build dir under cwd. A
@@ -22,7 +22,7 @@ import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 // Type-only, so the running container never has to resolve the protocol package -
 // Bun erases `import type` at transpile time. The layering still holds: adapters
 // depend on protocol and on nothing else.
-import type { BundleResult, BundlerCaps, FileMap } from '@speculos-harness/protocol';
+import type { BundleResult, BundlerCaps, FileMap } from './types';
 
 /* ------------------------------------------------------------------------- *
  * Constants

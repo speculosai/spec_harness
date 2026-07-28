@@ -1,5 +1,5 @@
 /**
- * @speculos-harness/protocol
+ * @speculosai/spec_harness/protocol
  *
  * The single source of truth for the Speculos Harness wire contract and the
  * adapter interfaces both the React client and the Python agent kit implement.
@@ -476,8 +476,8 @@ export interface BundlerCaps {
 
 /**
  * SERVER or browser adapter. Turns `{files, deps}` into browser-ready `{code, css}`.
- * The default is the locked-down Bun.build sidecar (`@speculos-harness/bundler`);
- * the optional browser bundler is `@speculos-harness/sandbox-browser`.
+ * The default is the locked-down Bun.build sidecar (`speculosai/harness-bundler (the build-service image)`);
+ * the optional browser bundler is `@speculosai/spec_harness/sandbox-browser`.
  */
 export interface Bundler {
   /** Bundle the project's files and dependencies. */

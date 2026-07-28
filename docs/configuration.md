@@ -125,7 +125,7 @@ rationale is in [`spec/preview-bridge.md`](../spec/preview-bridge.md).
 
 ## The bundler
 
-`bundler_url` points at the build-service sidecar (`speculos/harness-bundler`).
+`bundler_url` points at the build-service sidecar (`speculosai/harness-bundler`).
 The agent calls it whenever a file changes to turn the project into a running
 app.
 

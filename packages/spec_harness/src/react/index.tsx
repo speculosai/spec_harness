@@ -1,5 +1,5 @@
 /**
- * @speculos-harness/react
+ * @speculosai/spec_harness
  *
  * The embeddable workspace: a chat panel beside a live, sandboxed preview, plus a
  * read-only file explorer and a version timeline. One provider and one component
@@ -86,8 +86,8 @@ export { DEFAULT_STRINGS } from './strings';
 
 // The normative sandbox attribute string, so a host assembling its own iframe uses
 // the same one the workspace does. Never hand-write it.
-export { SANDBOX_ATTRIBUTES } from '@speculos-harness/preview';
+export { SANDBOX_ATTRIBUTES } from '../preview';
 
 // Re-export the wire types so consumers can type against one import.
-export type { ChatMessage } from '@speculos-harness/protocol';
-export type { Attachment, Capabilities, FileMap, Snapshot } from '@speculos-harness/protocol';
+export type { ChatMessage } from '../protocol';
+export type { Attachment, Capabilities, FileMap, Snapshot } from '../protocol';

@@ -5,12 +5,13 @@ connectors, the bundler, extra tools, telemetry - is an interface with a shipped
 default. This page is the authoring guide: what each interface means, the
 semantics that matter, and the ones you can get subtly wrong.
 
-The interfaces are defined once, in TypeScript, in
-[`packages/protocol`](../packages/protocol/), and mirrored 1:1 as Python
-`Protocol`s in the agent kit (`speculos_harness.interfaces`). The wire *data*
-shapes are generated from a single source so they cannot drift; the *behavioral*
-interfaces here are hand-maintained in both languages and guarded by a
-signature-drift check plus the conformance suite every reference adapter passes.
+The interfaces are defined once, in TypeScript, at the
+[`@speculosai/spec_harness/protocol`](../packages/spec_harness/src/protocol.ts)
+entry point, and mirrored 1:1 as Python `Protocol`s in the agent kit
+(`speculos_harness.interfaces`). The wire *data* shapes are generated from a
+single source so they cannot drift; the *behavioral* interfaces here are
+hand-maintained in both languages and guarded by a signature-drift check plus
+the conformance suite every reference adapter passes.
 This page uses the Python names, since adapters run server-side.
 
 Because every interface has a default, the core boots with zero configuration.
@@ -213,10 +214,11 @@ rollback is itself undoable). `get_snapshot` additionally returns the captured
 ## Bundler
 
 Turns `{files, deps}` into browser-ready `{code, css}`. Usually a thin client
-for the `@speculos-harness/bundler` sidecar. A browser-side (esbuild-wasm)
-implementation, `@speculos-harness/sandbox-browser`, is on the core roadmap: it
-ships once a shared bundler conformance suite proves it produces equivalent
-output, and until then `/capabilities` advertises server bundling.
+for the `speculosai/harness-bundler` sidecar. A browser-side (esbuild-wasm)
+implementation, at the `@speculosai/spec_harness/sandbox-browser` entry point, is
+on the core roadmap: it ships once a shared bundler conformance suite proves it
+produces equivalent output, and until then `/capabilities` advertises server
+bundling.
 
 ```python
 class MyBundler(Bundler):

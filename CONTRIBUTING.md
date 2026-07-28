@@ -5,7 +5,7 @@ Thanks for looking. Speculos Harness is the production engine behind [Speculos](
 ## Where to start
 
 - **Bug reports.** Say what you expected, what happened, and where. A minimal repro against [`examples/minimal`](./examples/minimal) is the fastest path to a fix.
-- **Adapters.** Storage, LLM providers, connectors, bundlers, auth. The interfaces live in [`packages/protocol`](./packages/protocol) and are mirrored 1:1 as Python protocols in the agent kit. New adapters are the most welcome kind of PR.
+- **Adapters.** Storage, LLM providers, connectors, bundlers, auth. The interfaces live in [`packages/spec_harness/src/protocol.ts`](./packages/spec_harness/src/protocol.ts) - the `@speculosai/spec_harness/protocol` entry point - and are mirrored 1:1 as Python protocols in the agent kit. New adapters are the most welcome kind of PR.
 - **Protocol feedback.** Read [`spec/`](./spec). If an event, a field, a method, or a capability is wrong, ambiguous, or missing, open an issue. The wire contract is versioned, so getting it right saves everyone downstream a migration.
 - **Examples and docs.** Integration stories from your stack, typo fixes, unclear passages, broken links. All welcome as small PRs.
 
@@ -33,14 +33,14 @@ npm install          # or: pnpm install
 npx tsc --noEmit     # typechecks every package
 ```
 
-The preview package carries its own self-check, including the sandbox escaping
+The preview host carries its own self-check, including the sandbox escaping
 rules. It is worth running after any change to the iframe host:
 
 ```bash
-bun run packages/preview/src/self-check.ts
+bun run packages/spec_harness/src/preview.self-check.ts
 ```
 
-A change to the wire protocol needs a matching change on both sides: the spec in [`spec/`](./spec), the TypeScript types in [`packages/protocol`](./packages/protocol), and the Python protocols in the agent kit. A PR that moves one without the others will get sent back.
+A change to the wire protocol needs a matching change on both sides: the spec in [`spec/`](./spec), the TypeScript types in [`packages/spec_harness/src/protocol.ts`](./packages/spec_harness/src/protocol.ts), and the Python protocols in the agent kit. A PR that moves one without the others will get sent back.
 
 ## How to file an issue
 
@@ -70,7 +70,7 @@ Use your real name and an email you can be reached at. PRs whose commits are not
 
 - **License** - the project is Apache-2.0. Contributions are accepted under the same license; do not add code under an incompatible license.
 - **Tone in docs** - plain and direct. No hype words. Sentence-case headers. Money examples in USD.
-- **Naming** - the project is `speculos-harness`; the runtime namespace defaults to `app`. Do not hard-code branding into shared packages - branding flows through `brand`, `strings`, and the `namespace` config.
+- **Naming** - the project is Speculos Harness: `@speculosai/spec_harness` on npm, `speculos-harness` on PyPI, `speculosai/harness-bundler` as the build-service image. The runtime namespace defaults to `app`. Do not hard-code branding into the shipped packages - branding flows through `brand`, `strings`, and the `namespace` config.
 - **Commits** - small, focused, with a clear message describing the change and the why.
 - **Respect the invariants.** Anything that touches the security-load-bearing invariants in [SECURITY.md](./SECURITY.md) (the sandbox attributes, `--ignore-scripts`, the CORS rule) needs an explicit, reviewed justification. These are enforced by a startup self-check and by CI; a PR that weakens one will not merge.
 

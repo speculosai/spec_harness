@@ -76,8 +76,12 @@ and your data. One component on the frontend, one router on the backend.
 ### 1. Install the frontend package
 
 ```bash
-npm install @speculos-harness/react
+npm install @speculosai/spec_harness
 ```
+
+One package covers the whole frontend: the workspace, the preview host
+(`/preview`), the wire-protocol types (`/protocol`), the MCP connector
+(`/connectors-mcp`), and the stylesheet (`/styles.css`).
 
 ### 2. Render the workspace
 
@@ -85,8 +89,8 @@ One provider tells the workspace where the backend lives and how to prove who is
 asking; one component is the workspace itself.
 
 ```tsx
-import { HarnessProvider, Builder } from '@speculos-harness/react'
-import '@speculos-harness/react/styles.css'
+import { HarnessProvider, Builder } from '@speculosai/spec_harness'
+import '@speculosai/spec_harness/styles.css'
 
 export function BuilderPage({ projectId }: { projectId: string }) {
   return (
@@ -159,7 +163,7 @@ container: non-root, ephemeral build directories, installs always with
 # docker-compose.yml
 services:
   bundler:
-    image: speculos/harness-bundler
+    image: speculosai/harness-bundler
     ports: ["8081:8081"]
 ```
 

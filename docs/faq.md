@@ -11,9 +11,10 @@ it against their real data, and it runs in place. It is the engine behind
 [Speculos](https://speculos.ai/cloud-demo), open source under Apache-2.0 - the
 same code, not a reference reimplementation.
 
-It ships as three pieces: an npm frontend (`@speculos-harness/react`), a Python
-backend router (`speculos-harness`), and a build-service container
-(`speculos/harness-bundler`). Start with the [Quickstart](./quickstart.md).
+It ships as three pieces: one npm frontend package (`@speculosai/spec_harness`),
+a Python backend router (`speculos-harness` on PyPI), and a build-service
+container (`speculosai/harness-bundler`). Start with the
+[Quickstart](./quickstart.md).
 
 ## What does it cost to run?
 
@@ -65,9 +66,9 @@ both editing the same file" problems a live editor brings.
 
 ## When does the browser-only mode arrive?
 
-It is on the core roadmap. `@speculos-harness/sandbox-browser` is an optional
-in-browser bundler (esbuild-wasm) that lets frontend-only apps run without the
-build-service sidecar.
+It is on the core roadmap. `@speculosai/spec_harness/sandbox-browser` is the
+entry point for an optional in-browser bundler (esbuild-wasm) that lets
+frontend-only apps run without the build-service sidecar.
 
 Real parity with the Bun bundler is a project of its own: CDN import resolution
 instead of `node_modules`, a pinned supported-dependency set, the JSX runtime

@@ -16,9 +16,8 @@ services:
     # The locked-down build container: non-root, ephemeral build dir, installs
     # run with --ignore-scripts.
     build: ./packages/bundler
-    image: speculos/harness-bundler
+    image: speculosai/harness-bundler
     # Build locally rather than pulling - the image is not on a registry yet.
-    pull_policy: build
     ports:
       - "8081:8081"
 

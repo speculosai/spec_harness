@@ -54,9 +54,9 @@ These guides are the *how*. The normative *what* lives one level up:
 - **[`spec/`](../spec/)** - the language-neutral wire protocol: the seven SSE
   chat events, the preview bridge, the bundle contract, the message format,
   capability negotiation, and the security invariants.
-- **[`packages/protocol`](../packages/protocol/)** - the same contract as
-  TypeScript types and adapter interfaces, mirrored 1:1 as Python `Protocol`s in
-  the agent kit. Read this for exact signatures.
+- **[`@speculosai/spec_harness/protocol`](../packages/spec_harness/src/protocol.ts)** -
+  the same contract as TypeScript types and adapter interfaces, mirrored 1:1 as
+  Python `Protocol`s in the agent kit. Read this for exact signatures.
 
 When a guide and the spec disagree, the spec wins. That is a bug worth
 reporting.

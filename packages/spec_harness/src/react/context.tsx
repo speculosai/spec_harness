@@ -22,8 +22,8 @@ import {
   DEFAULT_NAMESPACE,
   PROTOCOL_HEADER,
   PROTOCOL_VERSION,
-} from '@speculos-harness/protocol';
-import type { AuthMode, Capabilities, ConnectorProvider } from '@speculos-harness/protocol';
+} from '../protocol';
+import type { AuthMode, Capabilities, ConnectorProvider } from '../protocol';
 
 import { makeTranslator } from './strings';
 import type { HarnessStrings, Translate } from './strings';
@@ -339,7 +339,7 @@ export function useHarness(): HarnessContextValue {
   const ctx = useContext(HarnessContext);
   if (!ctx) {
     throw new Error(
-      '@speculos-harness/react: this must be rendered inside <HarnessProvider>. ' +
+      '@speculosai/spec_harness: this must be rendered inside <HarnessProvider>. ' +
         'The provider carries the base URL, the auth header factory and the shared rebuild key.',
     );
   }
@@ -426,7 +426,7 @@ export function HarnessProvider(props: HarnessProviderProps): ReactElement {
           setProtocolMismatch(caps.protocol);
           // Loud, because a mismatch is not something to paper over.
           console.error(
-            `@speculos-harness/react: protocol mismatch - client speaks ${PROTOCOL_VERSION}, ` +
+            `@speculosai/spec_harness: protocol mismatch - client speaks ${PROTOCOL_VERSION}, ` +
               `server speaks ${caps.protocol}.`,
           );
         } else {
@@ -436,7 +436,7 @@ export function HarnessProvider(props: HarnessProviderProps): ReactElement {
           // The #1 integration failure: the preview loads, the app renders, and every
           // data call silently returns nothing (spec/preview-bridge.md).
           console.warn(
-            `@speculos-harness/react: namespace mismatch - the provider uses "${namespace}" ` +
+            `@speculosai/spec_harness: namespace mismatch - the provider uses "${namespace}" ` +
               `but the server is bound to "${caps.namespace}". Data calls will return nothing ` +
               'until they agree.',
           );

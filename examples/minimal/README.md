@@ -55,7 +55,7 @@ minimal/
 │   ├── index.html
 │   ├── vite.config.ts      # proxies /api/builder to the agent
 │   ├── Dockerfile          # the web service
-│   ├── package.json        # @speculos-harness/react + react
+│   ├── package.json        # @speculosai/spec_harness + react
 │   └── README.md
 └── docker-compose.yml      # web + agent + bundler, one command
 ```

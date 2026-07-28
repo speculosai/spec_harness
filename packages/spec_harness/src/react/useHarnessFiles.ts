@@ -7,7 +7,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { ChatMessage, FileMap, Project, RollbackResult, Snapshot } from '@speculos-harness/protocol';
+import type { ChatMessage, FileMap, Project, RollbackResult, Snapshot } from '../protocol';
 
 import { HarnessHttpError, useHarness, useRebuildKey } from './context';
 import { changesByTurn } from './items';

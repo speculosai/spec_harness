@@ -8,7 +8,7 @@
  * MUST accept it forever and a writer MUST never emit it.
  */
 
-import { CHOICES_FENCE, LEGACY_CHOICES_FENCE } from '@speculos-harness/protocol';
+import { CHOICES_FENCE, LEGACY_CHOICES_FENCE } from '../protocol';
 
 /** One clickable option. */
 export interface ChoiceOption {

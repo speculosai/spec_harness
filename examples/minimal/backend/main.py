@@ -38,7 +38,7 @@ from speculos_harness.stores import SQLiteProjectStore
 #: your keys - no markup.
 DEFAULT_MODEL = os.environ.get("HARNESS_MODEL", "anthropic/claude-fable-5")
 
-#: Where the bundler sidecar (``speculos/harness-bundler``) is reachable. In the
+#: Where the bundler sidecar (``speculosai/harness-bundler``) is reachable. In the
 #: shipped docker-compose this resolves to the ``bundler`` service.
 BUNDLER_URL = os.environ.get("BUNDLER_URL", "http://bundler:8081")
 

@@ -6,12 +6,13 @@ chat call, the preview bridge, the bundle service, the message format on disk,
 the capability handshake, and the security invariants that hold the whole thing
 together.
 
-It is the source of truth. The npm packages (`@speculos-harness/react`,
-`@speculos-harness/preview`, `@speculos-harness/bundler`) and the Python kit
-(`speculos-harness` on PyPI) are implementations of what is written here. A third
-party may implement either side from this spec alone and interoperate. This is
-the same contract the production engine behind Speculos speaks, which is what
-lets that engine qualify as a conforming server.
+It is the source of truth. The npm package (`@speculosai/spec_harness`, with its
+`/preview` host and `/protocol` types), the Python kit (`speculos-harness` on
+PyPI), and the build service (the `speculosai/harness-bundler` image) are
+implementations of what is written here. A third party may implement either side
+from this spec alone and interoperate. This is the same contract the production
+engine behind Speculos speaks, which is what lets that engine qualify as a
+conforming server.
 
 ## Version
 
@@ -30,7 +31,7 @@ change without an integer bump.
 | [message-format.md](./message-format.md) | The OpenAI chat shape used on the wire and on disk, the `attachment_csv` content part, the `harness-choices` fenced block, and persistence timing. |
 | [capabilities.md](./capabilities.md) | `GET {base}/capabilities` - every field, and the 404 fallback defaults. |
 | [security.md](./security.md) | The threat model: untrusted generated code, untrusted model inputs, credential handling, share tokens, and the cross-origin embed recipe. |
-| [schema/](./schema/) | JSON Schemas for the wire types, emitted from the zod source in `@speculos-harness/protocol`. |
+| [schema/](./schema/) | JSON Schemas for the wire types, emitted from the zod source in `@speculosai/spec_harness/protocol`. |
 
 ## How the protocol is versioned
 

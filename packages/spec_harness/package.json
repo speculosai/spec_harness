@@ -1,0 +1,60 @@
+{
+  "name": "@speculosai/spec_harness",
+  "version": "0.1.0",
+  "description": "Embeddable AI app-building workspace: a chat panel beside a live, sandboxed preview. The React workspace, the sandboxed preview host, the wire-protocol types, and the MCP connector, in one package.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/speculosai/spec_harness.git"
+  },
+  "homepage": "https://speculos.ai",
+  "bugs": "https://github.com/speculosai/spec_harness/issues",
+  "type": "module",
+  "sideEffects": [
+    "*.css"
+  ],
+  "exports": {
+    ".": {
+      "types": "./src/react/index.tsx",
+      "import": "./src/react/index.tsx"
+    },
+    "./protocol": {
+      "types": "./src/protocol.ts",
+      "import": "./src/protocol.ts"
+    },
+    "./preview": {
+      "types": "./src/preview.ts",
+      "import": "./src/preview.ts"
+    },
+    "./connectors-mcp": {
+      "types": "./src/connectors-mcp.ts",
+      "import": "./src/connectors-mcp.ts"
+    },
+    "./sandbox-browser": {
+      "types": "./src/sandbox-browser.ts",
+      "import": "./src/sandbox-browser.ts"
+    },
+    "./styles.css": "./src/styles.css"
+  },
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "peerDependencies": {
+    "react": ">=18",
+    "react-dom": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "ai",
+    "app-builder",
+    "workspace",
+    "embeddable",
+    "react",
+    "sandbox",
+    "llm",
+    "agent"
+  ]
+}

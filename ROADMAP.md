@@ -10,7 +10,7 @@ Open source, Apache-2.0, same as everything else here.
 
 - **Read-only share links.** A scoped token that authorizes exactly what a viewer may do. Viewing, never edit rights.
 - **Background jobs.** Schedules, resumable runs, and durable state, so an app keeps working with the tab closed. Long runs checkpoint and resume, and the sandbox behind them is swappable.
-- **In-browser bundler.** `@speculos-harness/sandbox-browser`, an optional build path for frontend-only apps that drops the build-service sidecar. It ships once a shared bundler conformance suite proves parity with the server bundler. Until then `/capabilities` advertises server bundling only, so nothing claims a parity that does not exist.
+- **In-browser bundler.** `@speculosai/spec_harness/sandbox-browser`, an optional build path for frontend-only apps that drops the build-service sidecar. It ships once a shared bundler conformance suite proves parity with the server bundler. Until then `/capabilities` advertises server bundling only, so nothing claims a parity that does not exist.
 - **Code export and one-click deploy.** Take a generated app out of the workspace and run it yourself.
 - **Prompt queue.** Stack the next instruction while a build is still running.
 - **Cost and token meter.** Per-project spend in the UI, from the numbers `TelemetrySink` already emits. Inference is billed by your provider, on your keys - no markup.

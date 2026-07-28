@@ -1,16 +1,16 @@
-# @speculos-harness/bundler
+# speculosai/harness-bundler (the build-service image)
 
 The build-service sidecar for [Speculos Harness](https://speculos.ai). It takes a project's files and dependencies and returns bundled, browser-ready code and CSS - `{files, deps}` in, `{code, css}` out. The workspace calls it every time a file changes, which is what makes the preview live: the agent writes, the service rebuilds, the sandbox refreshes. A rebuild is fast enough that there is no "run" button anywhere.
 
 ## Run it, don't write it
 
-You don't write bundler code, you run the container. It is the reference implementation of the `Bundler` interface from `@speculos-harness/protocol`, with `caps: { location: 'server', supportsInstall: true, jsxRuntime: 'automatic' }`.
+You don't write bundler code, you run the container. It is the reference implementation of the `Bundler` interface from `@speculosai/spec_harness/protocol`, with `caps: { location: 'server', supportsInstall: true, jsxRuntime: 'automatic' }`.
 
 ```yaml
 # docker-compose.yml
 services:
   bundler:
-    image: speculos/harness-bundler
+    image: speculosai/harness-bundler
     ports:
       - "8081:8081"
 ```
@@ -20,8 +20,8 @@ Point the agent at it with `bundler_url="http://bundler:8081"`.
 Build the image yourself from this directory:
 
 ```bash
-docker build -t speculos/harness-bundler .
-docker run --rm -p 8081:8081 speculos/harness-bundler
+docker build -t speculosai/harness-bundler .
+docker run --rm -p 8081:8081 speculosai/harness-bundler
 ```
 
 From a source checkout - for hacking on the service, not for production, since a checkout is none of the things the container guarantees:
@@ -33,7 +33,7 @@ bun run src/index.ts          # or: bun run start
 `serve()` is also importable if you would rather own the process:
 
 ```ts
-import { serve } from '@speculos-harness/bundler';
+import { serve } from 'speculosai/harness-bundler (the build-service image)';
 
 const server = await serve({ port: 8081 });
 // ... later

@@ -5,7 +5,7 @@ embeddable AI app-building workspace. You hand `HarnessAgent` your LLM,
 storage, auth, and data connectors, and mount one FastAPI router. It speaks
 the versioned Harness wire protocol (a seven-event SSE chat stream, a
 `{files} -> {code,css}` bundle call, and a `postMessage` preview bridge), so a
-single `@speculos-harness/react` frontend talks to it unchanged.
+single `@speculosai/spec_harness` frontend talks to it unchanged.
 
 This is the same agent loop that runs behind Speculos in production - moved,
 not rewritten. One loop, in one language, on the revenue path.
@@ -65,7 +65,7 @@ agent = HarnessAgent(
         Amounts are USD. The fiscal year runs April to March.
         Every table needs a CSV export button.
     """,
-    bundler_url="http://bundler:8081",                    # the @speculos-harness/bundler sidecar
+    bundler_url="http://bundler:8081",                    # the speculosai/harness-bundler (the build-service image) sidecar
     namespace="app",                                      # MUST match the frontend + generated apps
     connectors=[                                          # optional; omit => file/package tools only
         postgres_connector(dsn=os.environ["DATABASE_URL"]),
@@ -137,7 +137,7 @@ returns `{code, css}`, called every time a file changes:
 ```yaml
 # docker-compose.yml (shipped)
 services:
-  bundler: { image: speculos/harness-bundler, ports: ["8081:8081"] }
+  bundler: { image: speculosai/harness-bundler, ports: ["8081:8081"] }
 ```
 
 ## Modules in closed beta

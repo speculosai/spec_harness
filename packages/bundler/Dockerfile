@@ -1,6 +1,6 @@
-# @speculos-harness/bundler - the locked-down build-service container.
+# speculosai/harness-bundler (the build-service image) - the locked-down build-service container.
 #
-# Published as `speculos/harness-bundler`. This is the one component that executes
+# Published as `speculosai/harness-bundler`. This is the one component that executes
 # untrusted dependency code: `bun add` runs arbitrary npm, and Bun.build resolves the
 # app's imports against this box's own node_modules. So it ships only as this hardened
 # image - a naive setup (root, install scripts enabled, temp dir moved out from under

@@ -15,7 +15,7 @@ one page, branded for Northwind Property Group.
   Your own router does this job instead.
 - `vite.config.ts` - proxies `/api/builder` to the agent, so the page and the
   API share an origin.
-- `package.json` - `@speculos-harness/react`, `@speculos-harness/protocol`,
+- `package.json` - `@speculosai/spec_harness`, `@speculosai/spec_harness/protocol`,
   `react`, `react-dom`, and the Vite/TypeScript toolchain.
 - `tsconfig.json` / `vite-env.d.ts` - strict TypeScript and Vite's ambient types.
 - `Dockerfile` / `.dockerignore` - the `web` service the compose files build.
@@ -67,7 +67,7 @@ npm run dev      # http://localhost:5173
 | `VITE_HARNESS_TOKEN` | unset | Sent as `Authorization: Bearer <token>` on every request. Leave it unset for the backend's single-user default. Only `VITE_`-prefixed variables reach the browser, and this one ends up in the built bundle - it is for local development, not a production secret. |
 
 Working inside this repository, `vite.config.ts` and `tsconfig.json` resolve
-`@speculos-harness/*` from `../../../packages/*/src`, so an edit to the React
+`@speculosai/spec_harness` from `../../../packages/spec_harness/src`, so an edit to the React
 package shows up on reload. Copy this directory into your own product and that
 sibling tree is gone, the aliases go quiet, and the published packages resolve
 from `node_modules` instead - which is also what happens inside the Docker image,

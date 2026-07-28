@@ -10,7 +10,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ChangeEvent, ClipboardEvent, DragEvent, ReactElement, ReactNode } from 'react';
-import type { Attachment } from '@speculos-harness/protocol';
+import type { Attachment } from '../protocol';
 
 import { useHarness } from './context';
 import { AttachIcon, CheckIcon, CloseIcon, SendIcon, SheetIcon, SpinnerIcon, StopIcon } from './icons';

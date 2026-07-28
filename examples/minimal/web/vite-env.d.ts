@@ -2,7 +2,7 @@
 
 /**
  * Vite's ambient types: `import.meta.env`, and the module declarations that make
- * `import '@speculos-harness/react/styles.css'` a legal import.
+ * `import '@speculosai/spec_harness/styles.css'` a legal import.
  *
  * The one variable this example reads is optional. Set `VITE_HARNESS_TOKEN` to
  * have the workspace send `Authorization: Bearer <token>` on every request; leave

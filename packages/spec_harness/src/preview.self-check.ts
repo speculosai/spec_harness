@@ -19,7 +19,7 @@ import {
   escapeForScript,
   escapeForStyle,
   assertSandboxSafe,
-} from './index.ts';
+} from './preview.ts';
 
 let passed = 0;
 const failures: string[] = [];

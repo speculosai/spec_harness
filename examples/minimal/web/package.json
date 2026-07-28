@@ -11,8 +11,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@speculos-harness/protocol": "^0.1.0",
-    "@speculos-harness/react": "^0.1.0",
+    "@speculosai/spec_harness": "^0.1.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },

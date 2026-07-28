@@ -1,5 +1,5 @@
 /**
- * @speculos-harness/sandbox-browser
+ * @speculosai/spec_harness/sandbox-browser
  *
  * The optional in-browser build path: a {@link Bundler} built on esbuild-wasm, with no
  * Bun sidecar and no server round-trip. It resolves imports from a CDN (esm.sh) against
@@ -14,7 +14,7 @@
  * bundling, so nothing claims a parity that does not exist.
  */
 
-import type { Bundler, BundlerCaps, BundleResult, FileMap } from '@speculos-harness/protocol';
+import type { Bundler, BundlerCaps, BundleResult, FileMap } from './protocol';
 
 /**
  * The message a caller gets if they wire this bundler in today. It names the gate
@@ -22,10 +22,10 @@ import type { Bundler, BundlerCaps, BundleResult, FileMap } from '@speculos-harn
  * instead, because "not implemented" on its own tells nobody what to do next.
  */
 const NOT_IMPLEMENTED =
-  '@speculos-harness/sandbox-browser: the in-browser build path is a roadmap item and is not ' +
+  '@speculosai/spec_harness/sandbox-browser: the in-browser build path is a roadmap item and is not ' +
   'implemented yet. It ships once a shared bundler conformance suite proves parity with the ' +
   'server bundler, so until then `/capabilities` advertises `sandbox.location: "server"` only. ' +
-  'Use the build service (@speculos-harness/bundler, the `speculos/harness-bundler` container) ' +
+  'Use the build service (speculosai/harness-bundler (the build-service image), the `speculosai/harness-bundler` container) ' +
   'and leave `useHarnessPreview({ bundle })` unset to get its default.';
 
 /** Options for {@link createBrowserBundler}. */

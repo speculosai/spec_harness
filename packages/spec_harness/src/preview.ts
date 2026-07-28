@@ -1,9 +1,9 @@
 /**
- * @speculos-harness/preview
+ * @speculosai/spec_harness/preview
  *
  * The framework-agnostic preview core: it assembles the null-origin `srcdoc`
  * document, wires the parent side of the postMessage data bridge, and generates the
- * in-iframe resolver shim. `@speculos-harness/react` renders around this; a non-React
+ * in-iframe resolver shim. `@speculosai/spec_harness` renders around this; a non-React
  * host can use it directly.
  *
  * Security is load-bearing here: the iframe is null-origin (`allow-same-origin` is
@@ -11,14 +11,14 @@
  * is the fixed, normative {@link SANDBOX_ATTRIBUTES} string from the protocol package.
  */
 
-import { SANDBOX_ATTRIBUTES, BRIDGE_TIMEOUT_MS, DEFAULT_NAMESPACE } from '@speculos-harness/protocol';
-import type { ConnectorSummary } from '@speculos-harness/protocol';
+import { SANDBOX_ATTRIBUTES, BRIDGE_TIMEOUT_MS, DEFAULT_NAMESPACE } from './protocol';
+import type { ConnectorSummary } from './protocol';
 
 /** Re-exported for hosts that assemble the iframe themselves. Never alter this string. */
-export { SANDBOX_ATTRIBUTES } from '@speculos-harness/protocol';
+export { SANDBOX_ATTRIBUTES } from './protocol';
 
 /** The default runtime namespace (`"app"`), re-exported so callers need one import. */
-export { DEFAULT_NAMESPACE } from '@speculos-harness/protocol';
+export { DEFAULT_NAMESPACE } from './protocol';
 
 /* ------------------------------------------------------------------------- *
  * The sandbox invariant
@@ -804,4 +804,4 @@ export function createBridge(opts: CreateBridgeOptions): Bridge {
 }
 
 // Surface the default timeout so hosts assembling their own bridge can reuse it.
-export { BRIDGE_TIMEOUT_MS } from '@speculos-harness/protocol';
+export { BRIDGE_TIMEOUT_MS } from './protocol';

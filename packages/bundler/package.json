@@ -1,7 +1,7 @@
 {
-  "name": "@speculos-harness/bundler",
+  "name": "harness-bundler",
   "version": "0.1.0",
-  "description": "The Speculos Harness build-service sidecar - {files, deps} in, {code, css} out. Ships as the locked-down container image speculos/harness-bundler.",
+  "description": "The Speculos Harness build-service sidecar - {files, deps} in, {code, css} out. Ships as the locked-down container image speculosai/harness-bundler.",
   "license": "Apache-2.0",
   "homepage": "https://speculos.ai",
   "type": "module",
@@ -20,18 +20,16 @@
   "sideEffects": false,
   "scripts": {
     "start": "bun run src/index.ts",
-    "docker:build": "docker build -t speculos/harness-bundler ."
+    "docker:build": "docker build -t speculosai/harness-bundler ."
   },
   "engines": {
     "bun": ">=1.1.0"
-  },
-  "dependencies": {
-    "@speculos-harness/protocol": "^0.1.0"
   },
   "devDependencies": {
     "bun-types": "^1.1.0"
   },
   "publishConfig": {
     "access": "public"
-  }
+  },
+  "private": true
 }

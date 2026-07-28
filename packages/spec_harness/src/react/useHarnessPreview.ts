@@ -10,15 +10,15 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { buildErrorDoc, buildSrcDoc, createBridge, makeShim, SANDBOX_ATTRIBUTES } from '@speculos-harness/preview';
-import type { IframeStrings } from '@speculos-harness/preview';
+import { buildErrorDoc, buildSrcDoc, createBridge, makeShim, SANDBOX_ATTRIBUTES } from '../preview';
+import type { IframeStrings } from '../preview';
 import type {
   ConnectorProvider,
   ConnectorSummary,
   FileMap,
   Project,
   RuntimeContext,
-} from '@speculos-harness/protocol';
+} from '../protocol';
 
 import { errorMessageOf, useHarness } from './context';
 

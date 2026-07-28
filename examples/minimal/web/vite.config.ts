@@ -1,6 +1,6 @@
-import { existsSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { existsSync } from 'node:fs';
 
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
@@ -14,26 +14,17 @@ const baseUrl = new URL(process.env.HARNESS_BASE_URL ?? 'http://localhost:8000/a
 
 const here = dirname(fileURLToPath(import.meta.url));
 
-// Running inside the Speculos Harness repository, resolve the workspace packages
-// from their sources so a change to @speculos-harness/react shows up on reload.
-// Copied into your own product - and inside the Docker image, which only carries
-// this directory - the sibling tree is absent, the aliases are empty, and the
-// published packages resolve from node_modules as usual.
-const packagesDir = resolve(here, '../../../packages');
-const fromSource = existsSync(packagesDir);
-const workspaceAliases = fromSource
-  ? [
-      // Directory targets, so `@speculos-harness/react/styles.css` maps to the file
-      // beside the entry point rather than through it.
-      { find: '@speculos-harness/react', replacement: resolve(packagesDir, 'react/src') },
-      { find: '@speculos-harness/preview', replacement: resolve(packagesDir, 'preview/src') },
-      { find: '@speculos-harness/protocol', replacement: resolve(packagesDir, 'protocol/src') },
-    ]
-  : [];
+// @speculosai/spec_harness resolves from node_modules like any dependency. In this
+// repository that is a workspace symlink to the package source, so an edit to the
+// package shows up on reload; copied into your own product it is the published
+// package. Either way there is nothing special to configure here - it is a normal
+// dependency. The one repo-only concession is letting Vite read files above the
+// example directory (the symlink points there).
+const repoRoot = resolve(here, '../../..');
+const inRepo = existsSync(resolve(repoRoot, 'packages/spec_harness'));
 
 export default defineConfig({
   plugins: [react()],
-  resolve: { alias: workspaceAliases },
   server: {
     host: '0.0.0.0', // reachable from outside the container
     port: 5173,
@@ -44,8 +35,6 @@ export default defineConfig({
       // are generated instead of in one delivery at the end of the turn.
       [baseUrl.pathname]: { target: baseUrl.origin, changeOrigin: true },
     },
-    // Serving files from outside the project root is refused by default; the
-    // aliases above point there.
-    fs: fromSource ? { allow: [here, resolve(here, '../../..')] } : undefined,
+    fs: inRepo ? { allow: [here, repoRoot] } : undefined,
   },
 });
