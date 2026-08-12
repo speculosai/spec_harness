@@ -94,6 +94,12 @@ const DEFAULT_BUILD_TIMEOUT_MS = 30_000;
 /** Default ceiling for one `bun add`. A cold package pulls a tarball and resolves a tree. */
 const DEFAULT_INSTALL_TIMEOUT_MS = 180_000;
 
+/**
+ * Default cap on builds running at once. Each build spawns its own Bun child, so this
+ * bounds how many runtimes an in-flight burst of requests can hold alive.
+ */
+const DEFAULT_MAX_CONCURRENT_BUILDS = 4;
+
 /** How many missing declared dependencies one bundle request may install for itself. */
 const MAX_AUTO_INSTALLS = 8;
 
@@ -136,6 +142,12 @@ export interface ServeOptions {
   buildTimeoutMs?: number;
   /** Wall-clock ceiling for one install, in milliseconds. Defaults to 180s. */
   installTimeoutMs?: number;
+  /**
+   * How many builds may run at once. Each build spawns its own Bun runtime, so this
+   * bounds memory under a burst of rebuilds. Surplus requests queue rather than fail.
+   * Defaults to 4.
+   */
+  maxConcurrentBuilds?: number;
   /**
    * Whether a bundle request may install declared dependencies that are missing from
    * this box's `node_modules`. Defaults to `true`: build directories are ephemeral and
@@ -199,6 +211,14 @@ function truncate(text: string): string {
  * own `maxRequestBodySize` is the backstop for a chunked body that lies about its size.
  */
 async function readJson(req: Request, maxBytes: number): Promise<Record<string, unknown>> {
+  // Require a JSON content-type. The service has no auth by design, so this is what
+  // stops a page in a developer's browser from driving it with a CORS-simple
+  // cross-origin POST: application/json forces a preflight this service does not answer.
+  // The real clients (the Python kit's httpx `json=`, the React kit's fetch) all send it.
+  const contentType = (req.headers.get('content-type') ?? '').split(';')[0].trim().toLowerCase();
+  if (!contentType.endsWith('json')) {
+    throw new HttpError(415, 'content-type must be application/json');
+  }
   const declared = Number(req.headers.get('content-length') ?? '');
   if (Number.isFinite(declared) && declared > maxBytes) {
     throw new HttpError(413, `request body is larger than ${maxBytes} bytes`);
@@ -336,9 +356,49 @@ function serialize<T>(task: () => Promise<T>): Promise<T> {
   return next;
 }
 
+/** A counting gate: at most N holders at once, the rest wait in FIFO order. */
+interface Semaphore {
+  acquire(): Promise<void>;
+  release(): void;
+}
+
+/**
+ * A counting semaphore, used to bound how many build children run at once. Builds each
+ * spawn a full Bun runtime, so leaving concurrency unbounded lets a burst of requests
+ * hold arbitrarily many runtimes alive; this queues the surplus instead of rejecting.
+ */
+function makeSemaphore(permits: number): Semaphore {
+  let available = Math.max(1, permits);
+  const waiters: Array<() => void> = [];
+  return {
+    acquire(): Promise<void> {
+      if (available > 0) {
+        available -= 1;
+        return Promise.resolve();
+      }
+      return new Promise<void>((res) => waiters.push(res));
+    },
+    release(): void {
+      const next = waiters.shift();
+      // Hand the permit straight to the next waiter, or return it to the pool.
+      if (next) next();
+      else available += 1;
+    },
+  };
+}
+
 interface InstallOutcome {
   ok: boolean;
   error?: string;
+}
+
+/**
+ * The exact argv every install spawns. Extracted so the startup self-check can assert on
+ * the real command line - dropping `--ignore-scripts` here is what a misedit would do,
+ * and that is what the self-check must catch.
+ */
+function installArgv(spec: string): string[] {
+  return [process.execPath, 'add', IGNORE_SCRIPTS, spec];
 }
 
 /**
@@ -356,7 +416,7 @@ async function runInstall(
   const spec = version && version !== 'latest' ? `${name}@${version}` : name;
   return serialize(async () => {
     const proc = Bun.spawn({
-      cmd: [process.execPath, 'add', IGNORE_SCRIPTS, spec],
+      cmd: installArgv(spec),
       cwd,
       stdout: 'pipe',
       stderr: 'pipe',
@@ -498,13 +558,39 @@ function formatLogs(logs: readonly unknown[], strip: (text: string) => string): 
  * It reads the entry path from the environment and prints one JSON line.
  */
 const BUILD_DRIVER = `
+import { dirname, resolve, sep } from 'node:path';
 const entry = process.env.HARNESS_BUILD_ENTRY;
+const root = resolve(process.env.HARNESS_BUILD_ROOT);
 const result = await Bun.build({
   entrypoints: [entry],
   target: 'browser',
   format: 'iife',
   define: { 'process.env.NODE_ENV': '"production"' },
   throw: false,
+  plugins: [{
+    name: 'confine-to-project',
+    setup(build) {
+      // Keep the app's own path imports inside the project directory. A relative or
+      // absolute path import written by a project file must resolve within the temp
+      // build root; without this an absolute import like /etc/hostname reads a host
+      // file and its contents come back in the bundle. Only the project's own files are
+      // policed - a package in node_modules resolving its internal './cjs/...' files is
+      // not the app reaching out, and a bare specifier (react, ...) is left to resolve
+      // against node_modules normally (this filter matches only './' and '/' paths).
+      build.onResolve({ filter: /^[./]/ }, (args) => {
+        const importer = args.importer || '';
+        const fromProject = importer === root || importer.startsWith(root + sep);
+        if (!fromProject) return undefined;
+        const abs = args.path.startsWith('/')
+          ? resolve(args.path)
+          : resolve(dirname(importer), args.path);
+        if (abs !== root && !abs.startsWith(root + sep)) {
+          throw new Error('import of ' + args.path + ' escapes the project directory');
+        }
+        return undefined;
+      });
+    },
+  }],
 });
 if (!result.success) {
   const logs = (result.logs ?? []).map((l) => ({ message: l.message ?? String(l), position: l.position }));
@@ -513,9 +599,13 @@ if (!result.success) {
   let code = '';
   let css = '';
   for (const artifact of result.outputs) {
-    const text = await artifact.text();
-    if (artifact.path && artifact.path.endsWith('.css')) css += text;
-    else code += text;
+    const path = artifact.path || '';
+    if (path.endsWith('.css')) { css += await artifact.text(); continue; }
+    // Only real JS goes in code. Copied assets (images, fonts, text) are separate
+    // outputs; concatenating one into the script corrupts the bundle, and they cannot
+    // be fetched from a null-origin srcdoc preview anyway.
+    if (artifact.kind !== 'entry-point' && artifact.kind !== 'chunk') continue;
+    code += await artifact.text();
   }
   process.stdout.write(JSON.stringify({ ok: true, code, css }));
 }
@@ -531,13 +621,15 @@ if (!result.success) {
 const MACRO_IMPORT_RE = /\b(?:with|assert)\s*:?\s*\{[^{}]*\btype\s*:\s*['"]macro['"]/;
 
 /** The only environment the build child gets. Nothing the host holds leaks into a build. */
-function buildEnv(entryAbs: string): Record<string, string> {
+function buildEnv(entryAbs: string, root: string): Record<string, string> {
   return {
     PATH: process.env.PATH ?? '/usr/local/bin:/usr/bin:/bin',
     HOME: process.env.HOME ?? '/tmp',
     NODE_ENV: 'production',
     NO_COLOR: '1',
     HARNESS_BUILD_ENTRY: entryAbs,
+    // The project temp dir the confine plugin holds resolution inside of.
+    HARNESS_BUILD_ROOT: root,
   };
 }
 
@@ -547,6 +639,7 @@ interface BuildConfig {
   buildTimeoutMs: number;
   installTimeoutMs: number;
   autoInstall: boolean;
+  buildSemaphore: Semaphore;
 }
 
 /**
@@ -591,7 +684,6 @@ async function buildProject(
   const strip = stripBuildDir(projectDir, cfg.cwd);
   try {
     await mkdir(projectDir, { recursive: true });
-    await writeFile(join(projectDir, 'tsconfig.json'), BUILD_TSCONFIG, 'utf-8');
 
     for (const [path, source] of Object.entries(files)) {
       const abs = resolveInside(projectDir, path);
@@ -600,35 +692,48 @@ async function buildProject(
       await writeFile(abs, source, 'utf-8');
     }
 
+    // Written after the file map so last-write-wins keeps the pinned config
+    // authoritative: a project file named /tsconfig.json must not be able to change the
+    // JSX transform /capabilities advertises or slip in a compilerOptions.paths map.
+    await writeFile(join(projectDir, 'tsconfig.json'), BUILD_TSCONFIG, 'utf-8');
+
     const entryAbs = resolveInside(projectDir, entry);
     if (!entryAbs) return { error: `illegal file path: ${entry}` };
 
-    const proc = Bun.spawn({
-      cmd: [process.execPath, '-e', BUILD_DRIVER],
-      // cwd, not the build dir: the child resolves bare imports against the
-      // node_modules beside the working directory, exactly as the invariant requires.
-      cwd: cfg.cwd,
-      env: buildEnv(entryAbs),
-      stdout: 'pipe',
-      stderr: 'pipe',
-    });
+    // Each build spawns a full Bun runtime, so bound how many run at once: an
+    // unauthenticated burst of rebuilds would otherwise stack runtimes until the
+    // container is out of memory. Queue rather than reject so the normal rebuild flow
+    // is unaffected.
+    await cfg.buildSemaphore.acquire();
     let timedOut = false;
-    const timer = setTimeout(() => {
-      timedOut = true;
-      proc.kill();
-    }, cfg.buildTimeoutMs);
-
     let exit: number;
     let stdout: string;
     let stderr: string;
     try {
-      [exit, stdout, stderr] = await Promise.all([
-        proc.exited,
-        new Response(proc.stdout).text(),
-        new Response(proc.stderr).text(),
-      ]);
+      const proc = Bun.spawn({
+        cmd: [process.execPath, '-e', BUILD_DRIVER],
+        // cwd, not the build dir: the child resolves bare imports against the
+        // node_modules beside the working directory, exactly as the invariant requires.
+        cwd: cfg.cwd,
+        env: buildEnv(entryAbs, projectDir),
+        stdout: 'pipe',
+        stderr: 'pipe',
+      });
+      const timer = setTimeout(() => {
+        timedOut = true;
+        proc.kill();
+      }, cfg.buildTimeoutMs);
+      try {
+        [exit, stdout, stderr] = await Promise.all([
+          proc.exited,
+          new Response(proc.stdout).text(),
+          new Response(proc.stderr).text(),
+        ]);
+      } finally {
+        clearTimeout(timer);
+      }
     } finally {
-      clearTimeout(timer);
+      cfg.buildSemaphore.release();
     }
 
     if (timedOut) return { error: `build timed out after ${cfg.buildTimeoutMs}ms` };
@@ -693,9 +798,10 @@ function selfCheck(cwd: string, buildsDir: string, baseDeps: Record<string, stri
     );
   }
 
-  // 3. `--ignore-scripts` is compiled in, not configured. This asserts nobody edited
-  //    it out of the constant that the spawn actually uses.
-  if (IGNORE_SCRIPTS !== '--ignore-scripts') {
+  // 3. Every install spawn carries `--ignore-scripts`. Asserting on the argv the spawn
+  //    actually builds - not on the constant in isolation - is what catches an edit
+  //    that drops the flag from `installArgv`.
+  if (!installArgv('react').includes('--ignore-scripts')) {
     failures.push('installs are not pinned to --ignore-scripts');
   }
 
@@ -767,6 +873,8 @@ export async function serve(opts: ServeOptions = {}): Promise<BundlerServer> {
     opts.buildTimeoutMs ?? envInt('HARNESS_BUNDLER_BUILD_TIMEOUT_MS', DEFAULT_BUILD_TIMEOUT_MS);
   const installTimeoutMs =
     opts.installTimeoutMs ?? envInt('HARNESS_BUNDLER_INSTALL_TIMEOUT_MS', DEFAULT_INSTALL_TIMEOUT_MS);
+  const maxConcurrentBuilds =
+    opts.maxConcurrentBuilds ?? envInt('HARNESS_BUNDLER_MAX_BUILDS', DEFAULT_MAX_CONCURRENT_BUILDS);
   const autoInstall = opts.autoInstall ?? !envFlag('HARNESS_BUNDLER_NO_AUTO_INSTALL');
 
   selfCheck(cwd, buildsDir, baseDeps, skipBaseDepCheck);
@@ -775,7 +883,14 @@ export async function serve(opts: ServeOptions = {}): Promise<BundlerServer> {
   await rm(buildsDir, { recursive: true, force: true }).catch(() => {});
   await mkdir(buildsDir, { recursive: true });
 
-  const cfg: BuildConfig = { buildsDir, cwd, buildTimeoutMs, installTimeoutMs, autoInstall };
+  const cfg: BuildConfig = {
+    buildsDir,
+    cwd,
+    buildTimeoutMs,
+    installTimeoutMs,
+    autoInstall,
+    buildSemaphore: makeSemaphore(maxConcurrentBuilds),
+  };
   const port = opts.port ?? envInt('PORT', DEFAULT_PORT);
 
   async function handleBundle(req: Request): Promise<Response> {

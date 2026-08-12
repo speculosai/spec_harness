@@ -8,10 +8,10 @@ semantics that matter, and the ones you can get subtly wrong.
 The interfaces are defined once, in TypeScript, at the
 [`@speculosai/spec_harness/protocol`](../packages/spec_harness/src/protocol.ts)
 entry point, and mirrored 1:1 as Python `Protocol`s in the agent kit
-(`speculos_harness.interfaces`). The wire *data* shapes are generated from a
-single source so they cannot drift; the *behavioral* interfaces here are
-hand-maintained in both languages and guarded by a signature-drift check plus
-the conformance suite every reference adapter passes.
+(`speculos_harness.interfaces`). Both the wire *data* shapes and the *behavioral*
+interfaces are hand-maintained in the two languages and kept in step by the prose
+spec in [`spec/`](../spec/) and by code review; the wire contract is versioned so
+a mismatch fails loudly rather than drifting silently.
 This page uses the Python names, since adapters run server-side.
 
 Because every interface has a default, the core boots with zero configuration.

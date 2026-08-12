@@ -539,7 +539,14 @@ def sample_tool_results(
         for i, m in enumerate(messages)
         if isinstance(m, Mapping) and m.get("role") == "tool"
     ]
-    keep = set(tool_positions[len(tool_positions) - keep_recent :]) if keep_recent > 0 else set()
+    # Clamp the slice start: when there are fewer than keep_recent tool results,
+    # a negative start would wrap and keep *fewer* of them, sampling results the
+    # agent just ran - the opposite of what keep_recent protects.
+    keep = (
+        set(tool_positions[max(0, len(tool_positions) - keep_recent):])
+        if keep_recent > 0
+        else set()
+    )
 
     out: list[ChatMessage] = []
     for i, m in enumerate(messages):

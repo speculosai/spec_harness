@@ -152,6 +152,9 @@ function bridgePreamble(ns: string): string {
   if (!window.__harnessBridge) {
     var pending = Object.create(null);
     window.addEventListener('message', function (e) {
+      // A reply is always sent by the window the frame posted to (the parent), so any
+      // other window - a sibling frame, an opener - is not a source of results.
+      if (e.source !== parent) return;
       var d = e && e.data;
       if (!d || d.type !== NS + '-result') return;
       var fn = pending[d.id];

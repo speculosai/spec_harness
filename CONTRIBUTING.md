@@ -26,11 +26,11 @@ docker compose up -d bundler
 BUNDLER_URL=http://127.0.0.1:8081 pytest py/speculos_harness/tests
 ```
 
-TypeScript - either package manager works, the workspace resolves locally:
+TypeScript - the workspace resolves locally through npm workspaces:
 
 ```bash
-npm install          # or: pnpm install
-npx tsc --noEmit     # typechecks every package
+npm install
+npm run typecheck    # tsc --noEmit across every package
 ```
 
 The preview host carries its own self-check, including the sandbox escaping
@@ -72,7 +72,7 @@ Use your real name and an email you can be reached at. PRs whose commits are not
 - **Tone in docs** - plain and direct. No hype words. Sentence-case headers. Money examples in USD.
 - **Naming** - the project is Speculos Harness: `@speculosai/spec_harness` on npm, `speculos-harness` on PyPI, `speculosai/harness-bundler` as the build-service image. The runtime namespace defaults to `app`. Do not hard-code branding into the shipped packages - branding flows through `brand`, `strings`, and the `namespace` config.
 - **Commits** - small, focused, with a clear message describing the change and the why.
-- **Respect the invariants.** Anything that touches the security-load-bearing invariants in [SECURITY.md](./SECURITY.md) (the sandbox attributes, `--ignore-scripts`, the CORS rule) needs an explicit, reviewed justification. These are enforced by a startup self-check and by CI; a PR that weakens one will not merge.
+- **Respect the invariants.** Anything that touches the security-load-bearing invariants in [SECURITY.md](./SECURITY.md) (the sandbox attributes, `--ignore-scripts`, the CORS rule) needs an explicit, reviewed justification. These are enforced by a startup self-check and checked in code review; a PR that weakens one will be sent back.
 
 ## Code of Conduct
 

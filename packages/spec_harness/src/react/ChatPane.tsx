@@ -94,7 +94,7 @@ export function ChatPane(props: ChatPaneProps): ReactElement {
   });
   const [model, setModel] = useState<string>(() => readStored(modelStorageKey(projectId)) ?? '');
 
-  const endRef = useRef<HTMLDivElement | null>(null);
+  const logRef = useRef<HTMLDivElement | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const chatRef = useRef<HarnessChat>(chat);
@@ -114,8 +114,11 @@ export function ChatPane(props: ChatPaneProps): ReactElement {
     [projectId],
   );
 
+  // Persist the empty string too: choosing "Server default" is a real choice, and
+  // `readStored` round-trips `''` back through `?? ''`, so it must not be dropped or the
+  // previously-picked model comes back on reload.
   useEffect(() => {
-    if (model) writeStored(modelStorageKey(projectId), model);
+    writeStored(modelStorageKey(projectId), model);
   }, [model, projectId]);
 
   // A model that is no longer offered falls back to the server default rather than
@@ -124,8 +127,14 @@ export function ChatPane(props: ChatPaneProps): ReactElement {
     if (model && models.length > 0 && !models.includes(model)) setModel('');
   }, [model, models]);
 
+  // Scroll the log itself, never the page, and only when the reader is already at the
+  // bottom - so an embedded workspace never yanks the host document on each token, and
+  // scrolling up to re-read an earlier card during streaming actually holds.
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    const log = logRef.current;
+    if (!log) return;
+    const nearBottom = log.scrollHeight - log.scrollTop - log.clientHeight < 80;
+    if (nearBottom) log.scrollTop = log.scrollHeight;
   }, [chat.items, chat.activity]);
 
   useEffect(() => {
@@ -242,7 +251,7 @@ export function ChatPane(props: ChatPaneProps): ReactElement {
 
   return (
     <div className="harness-root harness-chat">
-      <div className="harness-chat-log">
+      <div className="harness-chat-log" ref={logRef}>
         {header}
         {chat.loading && chat.items.length === 0 && (
           <div className="harness-muted harness-chat-loading">{t('chat.loadingHistory')}</div>
@@ -306,7 +315,6 @@ export function ChatPane(props: ChatPaneProps): ReactElement {
         )}
 
         {chat.activity && <ActivityLine activity={chat.activity} planMode={planMode} t={t} />}
-        <div ref={endRef} />
       </div>
 
       {notice && (
@@ -377,6 +385,7 @@ export function ChatPane(props: ChatPaneProps): ReactElement {
               value={input}
               disabled={chat.busy}
               placeholder={t('composer.placeholder')}
+              aria-label={t('composer.placeholder')}
               onChange={(event) => setInput(event.target.value)}
               onPaste={onPaste}
               onKeyDown={(event) => {
@@ -562,6 +571,7 @@ function ChoicesCard({
               className="harness-input"
               value={other}
               placeholder={t('chat.choicesOther')}
+              aria-label={t('chat.choicesOther')}
               onChange={(event) => setOther(event.target.value)}
               onKeyDown={(event) => {
                 if (event.key === 'Enter') {
@@ -618,7 +628,7 @@ function ActivityLine({
             ? t('chat.planning')
             : t('chat.building');
   return (
-    <div className="harness-activity">
+    <div className="harness-activity" role="status" aria-live="polite">
       <SpinnerIcon size={13} />
       <span>{label}</span>
     </div>

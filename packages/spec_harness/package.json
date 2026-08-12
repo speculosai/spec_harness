@@ -34,11 +34,14 @@
       "types": "./src/sandbox-browser.ts",
       "import": "./src/sandbox-browser.ts"
     },
-    "./styles.css": "./src/styles.css"
+    "./styles.css": "./src/styles.css",
+    "./package.json": "./package.json"
   },
   "files": [
     "src",
-    "README.md"
+    "!src/preview.self-check.ts",
+    "README.md",
+    "LICENSE"
   ],
   "peerDependencies": {
     "react": ">=18",

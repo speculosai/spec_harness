@@ -20,9 +20,9 @@ default:
   work back. This is the production engine behind Speculos, packaged - one loop,
   in one language, on the revenue path.
 - **The build service** (`speculosai/harness-bundler`) - a locked-down container
-  that turns `{files, deps}` into browser-ready `{code, css}`. The agent calls
-  it every time a file changes. It is a service you run, not a package you
-  import; its source is in `packages/bundler/`.
+  that turns `{files, deps}` into browser-ready `{code, css}`. The workspace
+  rebuilds through it, via the router, every time a file changes. It is a service
+  you run, not a package you import; its source is in `packages/bundler/`.
 
 Around the agent sit the adapters - storage, the model layer, auth, connectors,
 telemetry - each an interface with a default you can replace (see
@@ -57,7 +57,7 @@ flowchart TB
 
   builder -->|"chat SSE · bundle · reads (Harness-Protocol: 1)"| router
   builder -. "bridge-proxy data fetch" .-> router
-  loop -->|"{files,deps}"| bundler
+  router -->|"{files,deps}"| bundler
   loop --> llm
   loop --- store
   router --- auth
@@ -73,8 +73,10 @@ Reading the diagram:
   identity, attached by `auth.getHeaders`.
 - The **router runs the agent loop**, which calls the model, executes file tools
   server-side, and manages history so long builds stay cheap and coherent.
-- When files change, the **loop calls the build service** and the client
-  rebuilds the preview.
+- When files change, the **client bumps its rebuild key and calls
+  `POST {base}/bundle/{id}`**; the router proxies the project's files and deps to
+  the build service and returns the bundled `{code, css}`, and the preview
+  rebuilds.
 - The **generated app runs in a null-origin iframe** and cannot fetch anything
   directly. Its only way to reach data is the **postMessage bridge** to the
   parent, which forwards the request to `/connectors/{kind}`, where a connector

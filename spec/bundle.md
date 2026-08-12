@@ -41,8 +41,9 @@ result.
 
 ## Raw sidecar contract (bundler container)
 
-The bundler container exposes two endpoints and nothing else. It has no auth, no
-database, and no knowledge of projects - it is handed files and returns bytes.
+The bundler container exposes two working endpoints plus a health probe, and
+nothing else. It has no auth, no database, and no knowledge of projects - it is
+handed files and returns bytes.
 
 ### Bundle
 
@@ -86,6 +87,23 @@ database, and no knowledge of projects - it is handed files and returns bytes.
   both `name` and `version` are validated against a strict regex before anything
   is executed.
 
+### Health
+
+- `GET /health`
+
+  ```jsonc
+  // reply
+  { "ok": true, "caps": { "location": "server",
+                          "supportsInstall": true,
+                          "jsxRuntime": "automatic" } }
+  ```
+
+  Unauthenticated and side-effect free: it reports liveness and echoes the same
+  `caps` descriptor. The shipped image's `HEALTHCHECK` polls it, so an
+  orchestrator can gate readiness on it (the reference compose files wait for it
+  with `depends_on: { bundler: { condition: service_healthy } }`). An operator
+  fronting or reimplementing the sidecar should expose it.
+
 ## The `caps` descriptor
 
 Every bundler describes itself with a small capabilities object, surfaced to the
@@ -123,6 +141,7 @@ most common apps build with **zero** install round-trips. The baked set is:
 | Package | Purpose |
 |---|---|
 | `react` (19) | the app runtime |
+| `react-dom` (19) | mounts the app |
 | `recharts` | charts |
 | `@tanstack/react-table` | data tables |
 | `date-fns` | date handling |

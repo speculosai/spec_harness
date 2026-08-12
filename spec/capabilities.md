@@ -25,7 +25,8 @@ client code.
   "planMode": true,
   "attachments": ["image", "csv"],
   "models": ["anthropic/claude-fable-5", "openai/gpt-5.6-sol", "zai/glm-5.2"],
-  "connectors": ["postgres", "mcp"]
+  "connectors": ["postgres", "mcp"],
+  "snapshots": true
 }
 ```
 
@@ -42,6 +43,7 @@ client code.
 | `attachments` | string[] | Which attachment kinds the server accepts (`"image"`, `"csv"`). The client only offers these. |
 | `models` | string[] | The models the in-chat picker may offer. Empty or absent → hide the picker and use the server default. |
 | `connectors` | string[] | Which connector kinds are mounted (e.g. `"postgres"`, `"mcp"`). The client's preview shim degrades any unlisted connector to a never-throw stub. |
+| `snapshots` | boolean | Whether the mounted store keeps pre-turn snapshots. When `false` the client hides the version timeline and does not call `/projects/{id}/snapshots`. Absent → assume the endpoint may exist and let a 404 hide the timeline. |
 
 An optional `routing` flag advertises that the server picks the model per task.
 It is a forward-compatible addition; a client that doesn't know it ignores it,
@@ -65,8 +67,9 @@ assume **protocol-1 defaults** and continue - it does not error out.
 | `attachments` | `["image", "csv"]` | Both attachment kinds have always existed. |
 | Model routing | off | Routing is opt-in. |
 | `models` | none | With no advertised list, hide the picker and use the server default. |
+| `snapshots` | endpoint may exist | With no flag, the client tries `/projects/{id}/snapshots` and lets a 404 hide the version timeline. |
 
 These defaults deliberately describe a plain protocol-1 server, which is exactly
 what makes a capabilities-aware client work against a backend that predates the
-endpoint. The conformance kit ships a no-capabilities fixture that pins this
-fallback so it can never silently change.
+endpoint. The reference client and server both implement this fallback, so it
+does not silently change.

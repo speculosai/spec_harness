@@ -33,7 +33,7 @@ bun run src/index.ts          # or: bun run start
 `serve()` is also importable if you would rather own the process:
 
 ```ts
-import { serve } from 'speculosai/harness-bundler (the build-service image)';
+import { serve } from './src/index.ts';
 
 const server = await serve({ port: 8081 });
 // ... later
@@ -105,7 +105,7 @@ Three more properties are not in the spec's list but fall out of the same threat
 - **Macro imports are rejected outright**, before a build starts. Generated app code has no legitimate need for one.
 - **File paths are confined to the build directory.** A file map is model output, so `../../etc/whatever` is an input to expect rather than one to rule out.
 
-Requests are size-capped (8 MiB), builds are time-capped (30s), installs are time-capped (180s) and serialized against each other, since `bun add` mutates a shared lockfile and `node_modules`. Builds themselves stay fully concurrent - each one gets its own directory.
+Requests are size-capped (8 MiB), builds are time-capped (30s), installs are time-capped (180s) and serialized against each other, since `bun add` mutates a shared lockfile and `node_modules`. Builds run concurrently up to a cap (`HARNESS_BUNDLER_MAX_BUILDS`, default 4), since each one spawns its own Bun runtime and an unbounded number of them would exhaust the container; each build still gets its own directory, and surplus requests queue rather than fail.
 
 ## The baked base dependency set
 
@@ -133,6 +133,7 @@ Anything outside the set is added on demand through `install_package`. Change th
 | `maxRequestBytes` | `HARNESS_BUNDLER_MAX_BYTES` | `8388608` |
 | `buildTimeoutMs` | `HARNESS_BUNDLER_BUILD_TIMEOUT_MS` | `30000` |
 | `installTimeoutMs` | `HARNESS_BUNDLER_INSTALL_TIMEOUT_MS` | `180000` |
+| `maxConcurrentBuilds` | `HARNESS_BUNDLER_MAX_BUILDS` | `4` |
 | `autoInstall` | `HARNESS_BUNDLER_NO_AUTO_INSTALL=1` disables | on |
 | `skipBaseDepCheck` | `HARNESS_BUNDLER_SKIP_BASE_CHECK=1` | off |
 

@@ -31,7 +31,7 @@ change without an integer bump.
 | [message-format.md](./message-format.md) | The OpenAI chat shape used on the wire and on disk, the `attachment_csv` content part, the `harness-choices` fenced block, and persistence timing. |
 | [capabilities.md](./capabilities.md) | `GET {base}/capabilities` - every field, and the 404 fallback defaults. |
 | [security.md](./security.md) | The threat model: untrusted generated code, untrusted model inputs, credential handling, share tokens, and the cross-origin embed recipe. |
-| [schema/](./schema/) | JSON Schemas for the wire types, emitted from the zod source in `@speculosai/spec_harness/protocol`. |
+| [schema/](./schema/) | Where machine-readable JSON Schemas for the wire types will live. Planned; today the prose here plus the `@speculosai/spec_harness/protocol` types are the source of truth. |
 
 ## How the protocol is versioned
 
@@ -57,20 +57,21 @@ attempting to parse the stream.
 
 ## Conformance
 
-Conformance is executable, not aspirational. This directory carries a set of
-**golden fixtures** - recorded SSE transcripts and request/response pairs - that
-both sides replay in CI:
+Conformance is defined by this prose plus the
+`@speculosai/spec_harness/protocol` types, and demonstrated by the reference
+implementations: the TypeScript client and the Python kit both speak exactly what
+is written here, and a third party can implement either side from the spec alone
+and interoperate.
 
-- the TypeScript client parser must reproduce the rendered result from each
-  recorded transcript byte-for-byte, and
-- the Python kit must produce a conforming `/chat` stream and `/capabilities`
-  response for each fixture.
+The awkward cases a fresh reimplementation tends to get wrong are called out
+inline where they matter and handled by both reference sides: a legacy
+`speculos_csv` attachment part (see [message-format.md](./message-format.md)), a
+legacy `speculos-choices` fenced block, and a no-capabilities server (see
+[capabilities.md](./capabilities.md)).
 
-The fixtures deliberately include the awkward cases that a fresh reimplementation
-gets wrong: a legacy `speculos_csv` attachment part (see
-[message-format.md](./message-format.md)), a legacy `speculos-choices` fenced
-block, and a no-capabilities server (see [capabilities.md](./capabilities.md)).
-The suite is the definition of "conforming"; this prose is its explanation.
+A set of golden fixtures - recorded SSE transcripts and request/response pairs
+that both sides could replay - is planned; see [ROADMAP.md](../ROADMAP.md). Until
+it lands, the prose and the reference implementations are the contract.
 
 ## Reading order
 

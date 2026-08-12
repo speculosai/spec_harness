@@ -255,6 +255,12 @@ export function historyToItems(messages: ChatMessage[] | null | undefined): Chat
     }
   });
 
+  // Persisted history is terminal: a tool call whose result never arrived (an
+  // interrupted turn) will never get one, so settle it rather than reload a spinner.
+  for (const item of items) {
+    if (isToolItem(item) && item.status === 'pending') item.status = 'error';
+  }
+
   return items;
 }
 

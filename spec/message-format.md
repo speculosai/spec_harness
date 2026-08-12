@@ -52,9 +52,9 @@ before the rename. Therefore:
 - **On write**, emit **only** `attachment_csv`.
 
 A reader that recognizes only `attachment_csv` would silently drop every CSV
-attachment from every pre-rename conversation on reload. The conformance kit ships
-a golden fixture containing a legacy `speculos_csv` message so this can never
-regress.
+attachment from every pre-rename conversation on reload. Both reference sides -
+the client rehydrator and the server normalizer - accept the legacy name, so this
+does not regress.
 
 ## The `harness-choices` fenced block
 
@@ -83,8 +83,8 @@ As with the CSV part, an earlier build fenced these choices as
   `speculos-choices` fence - indefinitely.
 - **On write**, emit **only** `harness-choices`.
 
-A legacy golden fixture pins this, and the default `<ChatPane>` ships the chips
-renderer for the new fence.
+The reference client accepts both fences, and the default `<ChatPane>` ships the
+chips renderer for the new fence.
 
 ## Persistence expectations
 

@@ -46,7 +46,10 @@ let sandboxChecked = false;
  * assembles its own iframe can run the same check at boot.
  */
 export function assertSandboxSafe(sandbox: string = SANDBOX_ATTRIBUTES): void {
-  const tokens = sandbox.trim().split(/\s+/).filter(Boolean);
+  // Sandbox keywords are ASCII case-insensitive to the HTML parser, so `ALLOW-SAME-ORIGIN`
+  // weakens the frame exactly as `allow-same-origin` does. Lowercase before tokenising, or
+  // a mixed-case forbidden token slips past this check while the browser still honours it.
+  const tokens = sandbox.trim().toLowerCase().split(/\s+/).filter(Boolean);
   const failures: string[] = [];
   for (const forbidden of FORBIDDEN_SANDBOX_TOKENS) {
     if (tokens.includes(forbidden)) {
@@ -112,13 +115,18 @@ export function escapeForStyle(css: string): string {
   return String(css ?? '').replace(/<\/style/gi, '<\\/style');
 }
 
-/** Escape text for interpolation into HTML markup. */
+/**
+ * Escape text for interpolation into HTML markup. The result is safe in both text and
+ * quoted-attribute contexts: the single quote is escaped as well, so a value dropped into
+ * a single-quoted attribute (`<div title='…'>`) cannot break out of it.
+ */
 export function escapeHtml(text: string): string {
   return String(text ?? '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 /** JSON, safe to inline into a `<script>` body. */
@@ -223,6 +231,9 @@ export function bridgePreamble(ns: string, strings?: IframeStrings): string {
   if (!window.__harnessBridge) {
     var pending = Object.create(null);
     window.addEventListener('message', function (e) {
+      // A reply is always sent by the window the frame posted to (the parent), so any
+      // other window - a sibling frame, an opener - is not a source of results.
+      if (e.source !== parent) return;
       var d = e && e.data;
       if (!d || d.type !== NS + '-result') return;
       var fn = pending[d.id];
@@ -767,9 +778,11 @@ export function createBridge(opts: CreateBridgeOptions): Bridge {
     if (typeof type !== 'string' || !type) return;
 
     // Only this iframe may talk to this bridge. The frame is null-origin, so identity
-    // is the only check available - and it is the one that matters.
+    // is the only check available - and it is the one that matters. Fail closed: a
+    // legitimate message always has a live `contentWindow` to compare against, so when
+    // there is no frame (detached, or not yet attached) nothing is accepted.
     const frame = opts.iframe?.contentWindow ?? null;
-    if (frame && event.source !== frame) return;
+    if (!frame || event.source !== frame) return;
 
     if (type === 'preview-error') {
       opts.onError?.({

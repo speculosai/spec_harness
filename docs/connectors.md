@@ -90,7 +90,11 @@ import { mcpConnector } from '@speculosai/spec_harness/connectors-mcp'
 <HarnessProvider
   baseUrl="/api/builder"
   auth={{ getHeaders }}
-  connectors={[ mcpConnector({ url: 'https://your-mcp-host.example/notion' }) ]}
+  connectors={[
+    // Give the client half a route to the agent router, so its calls proxy
+    // through /api/builder/connectors/mcp.
+    mcpConnector({ url: 'https://your-mcp-host.example/notion', baseUrl: '/api/builder' }),
+  ]}
 >
 ```
 

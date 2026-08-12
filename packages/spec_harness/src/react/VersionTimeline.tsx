@@ -11,7 +11,7 @@ import type { ReactElement } from 'react';
 import type { Snapshot } from '../protocol';
 
 import { useHarness } from './context';
-import { RestoreIcon, SpinnerIcon } from './icons';
+import { CloseIcon, RestoreIcon, SpinnerIcon } from './icons';
 import { useHarnessFiles } from './useHarnessFiles';
 
 /** Props for {@link VersionTimeline}. */
@@ -64,6 +64,7 @@ export function VersionTimeline(props: VersionTimelineProps): ReactElement {
   const { t, auth } = useHarness();
   const files = useHarnessFiles({ projectId });
   const [pending, setPending] = useState<string | null>(null);
+  const [failure, setFailure] = useState<string | null>(null);
   // A viewer sees the history but cannot rewrite the project. The real boundary is
   // the server's `Principal.can_edit`; this only stops offering a button that would
   // come back 403.
@@ -80,15 +81,27 @@ export function VersionTimeline(props: VersionTimelineProps): ReactElement {
       const confirmed = typeof window === 'undefined' ? true : window.confirm(t('versions.restoreConfirm'));
       if (!confirmed) return;
       setPending(snapshot.id);
+      setFailure(null);
       try {
         await files.restore(snapshot.id);
         onRestore?.(snapshot.id);
+      } catch (err) {
+        console.warn('[speculos-harness] restore failed:', err);
+        setFailure(err instanceof Error ? err.message : String(err));
       } finally {
         setPending(null);
       }
     },
     [files, onRestore, pending, t],
   );
+
+  const undo = useCallback(() => {
+    setFailure(null);
+    void files.undoRestore().catch((err) => {
+      console.warn('[speculos-harness] undo failed:', err);
+      setFailure(err instanceof Error ? err.message : String(err));
+    });
+  }, [files]);
 
   // A store with no snapshot surface answers 404 and the timeline simply is not part
   // of that deployment's UI.
@@ -103,11 +116,25 @@ export function VersionTimeline(props: VersionTimelineProps): ReactElement {
       {canEdit && files.undo && (
         <div className="harness-undo-bar">
           <span>{t('versions.restored')}</span>
-          <button type="button" className="harness-btn harness-btn-soft" onClick={() => void files.undoRestore()}>
+          <button type="button" className="harness-btn harness-btn-soft" onClick={undo}>
             {t('versions.undo')}
           </button>
           <button type="button" className="harness-link" onClick={files.dismissUndo}>
             {t('preview.dismiss')}
+          </button>
+        </div>
+      )}
+
+      {failure && (
+        <div className="harness-notice">
+          <span>{failure}</span>
+          <button
+            type="button"
+            className="harness-icon-btn"
+            aria-label={t('preview.dismiss')}
+            onClick={() => setFailure(null)}
+          >
+            <CloseIcon size={12} />
           </button>
         </div>
       )}

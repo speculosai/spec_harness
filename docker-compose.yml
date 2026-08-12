@@ -9,41 +9,11 @@
 #   export ANTHROPIC_API_KEY=sk-ant-...   # any LiteLLM-supported provider works
 #   docker compose up
 #
-# See examples/minimal for the web and backend sources these services build from.
+# This root file is the same stack the quickstart runs from examples/minimal. To
+# avoid two definitions drifting apart, it is a single include of that one file
+# rather than a second copy - edit the topology there. Relative paths in the
+# included file resolve against examples/minimal, so the build contexts still
+# point at the repository root.
 
-services:
-  bundler:
-    # The locked-down build container: non-root, ephemeral build dir, installs
-    # run with --ignore-scripts.
-    build: ./packages/bundler
-    image: speculosai/harness-bundler
-    # Build locally rather than pulling - the image is not on a registry yet.
-    ports:
-      - "8081:8081"
-
-  agent:
-    # The Python agent kit mounted on a minimal FastAPI app.
-    build:
-      context: .
-      dockerfile: examples/minimal/backend/Dockerfile
-    environment:
-      # One LLM key, read from your shell or a .env file. Never commit a real key.
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-sk-ant-...}
-      # Where the bundler sidecar lives, inside the compose network.
-      - BUNDLER_URL=http://bundler:8081
-    depends_on:
-      - bundler
-    ports:
-      - "8000:8000"
-
-  web:
-    # The React workspace example. Points at the agent router (mounted at /api/builder).
-    build:
-      context: .
-      dockerfile: examples/minimal/web/Dockerfile
-    environment:
-      - HARNESS_BASE_URL=http://agent:8000/api/builder
-    depends_on:
-      - agent
-    ports:
-      - "5173:5173"
+include:
+  - examples/minimal/docker-compose.yml

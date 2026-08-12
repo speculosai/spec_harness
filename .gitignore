@@ -5,6 +5,10 @@ node_modules/
 .pnp.js
 jspm_packages/
 
+# npm is the package manager of record; package-lock.json is tracked.
+# A stray pnpm lockfile is not maintained and should not be committed.
+pnpm-lock.yaml
+
 # Build output
 dist/
 build/

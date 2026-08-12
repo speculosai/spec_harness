@@ -126,8 +126,8 @@ rationale is in [`spec/preview-bridge.md`](../spec/preview-bridge.md).
 ## The bundler
 
 `bundler_url` points at the build-service sidecar (`speculosai/harness-bundler`).
-The agent calls it whenever a file changes to turn the project into a running
-app.
+The router calls it whenever the client asks for a rebuild - which the workspace
+does whenever a file changes - to turn the project into a running app.
 
 ```python
 agent = HarnessAgent(bundler_url="http://bundler:8081", ...)
@@ -137,8 +137,8 @@ In the shipped `docker-compose`, `http://bundler:8081` resolves to the `bundler`
 service. The bundler ships only as a locked-down container - non-root, ephemeral
 build directories, installs always with `--ignore-scripts` - and it refuses to
 start if any of those invariants is misconfigured away. Its full contract, the
-baked base dependency set (react, recharts, `@tanstack/react-table`, date-fns,
-lucide-react), and the strict-CSP inlined-CSS option are in
+baked base dependency set (react, react-dom, recharts, `@tanstack/react-table`,
+date-fns, lucide-react), and the strict-CSP inlined-CSS option are in
 [`spec/bundle.md`](../spec/bundle.md). To swap the server bundler for something
 else, implement a `Bundler`; see [Adapters](./adapters.md#bundler).
 

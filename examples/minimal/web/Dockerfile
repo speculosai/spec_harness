@@ -12,10 +12,11 @@ FROM node:20-alpine
 
 WORKDIR /repo
 
-# The workspace manifests and package sources first, so editing the example does
-# not reinstall the tree. The packages ship TypeScript sources, so Vite consumes
-# them directly - there is no separate build step to keep in sync.
-COPY package.json ./
+# The workspace manifests and the committed lockfile first, so editing the
+# example does not reinstall the tree and every build resolves the same pinned
+# versions. The packages ship TypeScript sources, so Vite consumes them directly
+# - there is no separate build step to keep in sync.
+COPY package.json package-lock.json ./
 COPY packages ./packages
 COPY examples/minimal/web ./examples/minimal/web
 

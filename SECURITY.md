@@ -23,7 +23,7 @@ Design-level reports are as welcome as implementation bugs. A hole in the sandbo
 
 ## Non-negotiable invariants
 
-These properties are what make it safe to run generated code and to embed the workspace in another product. They are enforced by a startup self-check that refuses to run when one is misconfigured, and by CI. A change that weakens any of them will not be accepted without an explicit, reviewed security justification - and most of them simply must not change at all.
+These properties are what make it safe to run generated code and to embed the workspace in another product. They are enforced by a startup self-check that refuses to run when one is misconfigured, and reinforced in code review. A change that weakens any of them will not be accepted without an explicit, reviewed security justification - and most of them simply must not change at all.
 
 1. **The preview sandbox is null-origin.** The generated app runs in a `srcdoc` iframe with the sandbox attribute
    `allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-modals allow-top-navigation-by-user-activation`.

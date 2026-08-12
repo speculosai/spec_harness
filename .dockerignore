@@ -1,8 +1,20 @@
+# Both compose files build from the repository root, so this is the only
+# .dockerignore that ever applies. Keep the build context to the sources.
 node_modules
 **/node_modules
 **/dist
 **/.builds
 **/__pycache__
 **/*.pyc
+**/.pytest_cache
+**/*.egg-info
+**/*.log
 .git
 .venv
+**/.venv
+
+# Never send real keys into the build context.
+.env
+**/.env
+**/.env.*
+!**/.env.example

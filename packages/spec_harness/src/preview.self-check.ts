@@ -18,6 +18,7 @@ import {
   makeShim,
   escapeForScript,
   escapeForStyle,
+  escapeHtml,
   assertSandboxSafe,
 } from './preview.ts';
 
@@ -60,6 +61,9 @@ check(
 throws('a weakened sandbox is rejected', () =>
   assertSandboxSafe(`${SANDBOX_ATTRIBUTES} allow-same-origin`),
 );
+throws('a weakened sandbox is rejected case-insensitively', () =>
+  assertSandboxSafe(`${SANDBOX_ATTRIBUTES} ALLOW-SAME-ORIGIN`),
+);
 throws('ungated top navigation is rejected', () =>
   assertSandboxSafe('allow-scripts allow-top-navigation'),
 );
@@ -79,6 +83,10 @@ check(
 );
 check('escaping is idempotent', escapeForScript(escaped) === escaped);
 check('</style> cannot close the style element', !/<\/style/i.test(escapeForStyle('a{}</style>')));
+check(
+  'escapeHtml is safe in quoted-attribute context (single quote escaped)',
+  escapeHtml(`a'"<>&`) === 'a&#39;&quot;&lt;&gt;&amp;',
+);
 
 // The breakout attempt, run through the real document assembly. The payload text
 // survives - it is a string literal in the app's own code - but it must not create a

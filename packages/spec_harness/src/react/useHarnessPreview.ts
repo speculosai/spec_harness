@@ -98,7 +98,7 @@ type BuildOutcome =
  */
 export function useHarnessPreview(opts: UseHarnessPreviewOptions): HarnessPreview {
   const { projectId, rebuildKey, bundle, onError } = opts;
-  const { request, requestJson, namespace, connectors, previewHead, auth, t, bus } = useHarness();
+  const { request, requestJson, namespace, connectors, previewHead, auth, baseUrl, t, bus } = useHarness();
 
   const [srcDoc, setSrcDoc] = useState('');
   const [building, setBuilding] = useState(true);
@@ -193,11 +193,15 @@ export function useHarnessPreview(opts: UseHarnessPreviewOptions): HarnessPrevie
       if (cancelled) return;
 
       const strings = iframeStrings();
+      // A trailing comment after `</html>` is inert to the parser but makes every build's
+      // document unique, so a rebuild that produces byte-identical output still changes the
+      // `srcdoc` attribute and reloads the frame (e.g. Rebuild pressed to reset a crash).
+      const marker = `\n<!-- harness-build ${key} -->`;
       if ('error' in outcome) {
         // Never a blank frame: the same readable card a runtime crash produces, with
         // the build error in it. `report: false` because the failure is reported here
         // directly - the frame's own channel would be a second, redundant hop.
-        setSrcDoc(buildErrorDoc({ error: outcome.error, headHtml: previewHead, strings, report: false }));
+        setSrcDoc(buildErrorDoc({ error: outcome.error, headHtml: previewHead, strings, report: false }) + marker);
         setError({ kind: 'build', message: outcome.error, fault: outcome.fault });
         if (!outcome.fault) reportOnce({ message: `Build failed:\n${outcome.error}` });
       } else {
@@ -209,7 +213,7 @@ export function useHarnessPreview(opts: UseHarnessPreviewOptions): HarnessPrevie
             headHtml: previewHead,
             shim: makeShim(namespace, outcome.connectors, { strings }),
             strings,
-          }),
+          }) + marker,
         );
         setError(null);
       }
@@ -246,10 +250,17 @@ export function useHarnessPreview(opts: UseHarnessPreviewOptions): HarnessPrevie
         // The browser holds no authoritative principal - the server resolves the real
         // one from the same headers. This is the shape a client half sees, nothing
         // more; a client-half connector must not make an access decision on it.
+        //
+        // `request`/`baseUrl` are the route back to the router: a connector like the
+        // reference MCP one forwards its runtime calls to `POST {baseUrl}/connectors/{kind}`
+        // through the workspace's own authenticated helper. Without them a mounted client
+        // half has no way to reach the agent router and every call fails.
         const ctx: RuntimeContext = {
           principal: { userId: 'client', canEdit: authRef.current.canEdit !== false },
           namespace,
           shareToken: authRef.current.shareToken,
+          request,
+          baseUrl,
         };
         try {
           return await provider.handle(kind, payload, ctx);
@@ -273,7 +284,7 @@ export function useHarnessPreview(opts: UseHarnessPreviewOptions): HarnessPrevie
         return { error: `Network error: ${err instanceof Error ? err.message : String(err)}` };
       }
     },
-    [namespace, request],
+    [namespace, request, baseUrl],
   );
 
   useEffect(() => {

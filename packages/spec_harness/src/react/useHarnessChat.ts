@@ -233,6 +233,9 @@ export function useHarnessChat(opts: UseHarnessChatOptions): HarnessChat {
       // Argument text arrives before the tool is identified, so a card is opened per
       // `index` and reconciled when the matching `tool-call` lands.
       const pending = new Map<number, { tempId: string; argsText: string }>();
+      // Every card id this turn opened, so a stop or an error mid-tool can settle its
+      // own still-running cards instead of leaving them spinning for the session.
+      const opened = new Set<string>();
       const controller = new AbortController();
       abortRef.current = controller;
 
@@ -295,6 +298,7 @@ export function useHarnessChat(opts: UseHarnessChatOptions): HarnessChat {
                 return;
               }
               const tempId = uid('pending');
+              opened.add(tempId);
               pending.set(index, { tempId, argsText: argsDelta });
               pushItem({
                 id: tempId,
@@ -309,6 +313,7 @@ export function useHarnessChat(opts: UseHarnessChatOptions): HarnessChat {
 
             case 'tool-call': {
               const toolCallId = typeof data.toolCallId === 'string' ? data.toolCallId : uid('call');
+              opened.add(toolCallId);
               const name = typeof data.name === 'string' ? data.name : '';
               const input =
                 data.input && typeof data.input === 'object' && !Array.isArray(data.input)
@@ -409,6 +414,17 @@ export function useHarnessChat(opts: UseHarnessChatOptions): HarnessChat {
         busyRef.current = false;
         setBusy(false);
         setActivity(null);
+        // A stop or an error can land while a tool is still in flight. Settle this
+        // turn's own unfinished cards so their spinner does not run for the session.
+        setItems((current) =>
+          current.map((item) =>
+            isToolItem(item) &&
+            opened.has(item.toolCallId) &&
+            (item.status === 'streaming' || item.status === 'pending')
+              ? ({ ...item, status: 'error' } as ToolChatItem)
+              : item,
+          ),
+        );
       }
     },
     [appendAssistantText, baseUrl, bus, patchTool, projectId, pushItem, request],
@@ -424,6 +440,19 @@ export function useHarnessChat(opts: UseHarnessChatOptions): HarnessChat {
   const stop = useCallback(() => {
     abortRef.current?.abort();
   }, []);
+
+  // Abort any in-flight turn when the component unmounts or the project changes.
+  // React runs all passive cleanups before any setup, so clearing `busyRef` here lets
+  // the history effect for the new projectId see `false` and load its transcript,
+  // instead of the old turn's stream appending deltas into the wrong project.
+  useEffect(
+    () => () => {
+      abortRef.current?.abort();
+      abortRef.current = null;
+      busyRef.current = false;
+    },
+    [projectId],
+  );
 
   // The preview reads this to show "patching…" instead of a raw error while the
   // agent is mid-repair, and to hold its auto-fix until the turn is over.

@@ -1,7 +1,7 @@
 """Adapter interfaces for Speculos Harness.
 
 These are the Python 1:1 mirror of the TypeScript interfaces that live in
-`@speculos-harness/protocol`. The wire *data* types (SSE event payloads,
+`@speculosai/spec_harness/protocol`. The wire *data* types (SSE event payloads,
 ``Project``, ``Snapshot``, capabilities, ``ConnectorSummary``) are generated
 from a single zod source; the *behavioral* interfaces below (methods, async
 iterables, abort signals - things JSON Schema cannot express) are
@@ -332,7 +332,7 @@ class LLMProvider(Protocol):
 class Bundler(Protocol):
     """Turns ``{files, deps}`` into browser-ready ``{code, css}``.
 
-    Usually a client for the ``@speculos-harness/bundler`` sidecar container.
+    Usually a client for the ``speculosai/harness-bundler`` sidecar container.
     A browser-side (esbuild-wasm) implementation is on the core roadmap: it
     ships once a shared bundler conformance suite proves parity with the
     sidecar, and until then ``/capabilities`` advertises server bundling.

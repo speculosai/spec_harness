@@ -9,6 +9,9 @@ Mount it under any prefix and every route in the protocol is registered.
 
 from __future__ import annotations
 
+import json
+import logging
+
 from typing import Any, Iterable, Literal, Mapping, Optional, Sequence, Union
 
 from fastapi import APIRouter, Request
@@ -92,10 +95,31 @@ def _error(message: str, status: int) -> JSONResponse:
     return _json({"error": message}, status)
 
 
+#: The largest JSON body any route will buffer. ``/chat`` accepts base64 image
+#: attachments and whole CSV bodies, and ``PATCH /projects`` accepts a full file
+#: map, so the cap protects the single-process zero-config deployment from one
+#: caller spiking memory with an oversized payload. A body over the cap reads as
+#: "no valid body" and the route answers 400.
+MAX_BODY_BYTES = 32 * 1024 * 1024
+
+
 async def _body(request: Request) -> Optional[dict[str, Any]]:
-    """Parse a JSON object body, or ``None`` when it is not one."""
+    """Parse a JSON object body, or ``None`` when it is not one.
+
+    The body is size-capped as it streams in, so a payload larger than
+    :data:`MAX_BODY_BYTES` is refused before it is fully buffered rather than
+    read whole into memory first.
+    """
+    declared = request.headers.get("content-length")
+    if declared and declared.isdigit() and int(declared) > MAX_BODY_BYTES:
+        return None
+    raw = b""
+    async for chunk in request.stream():
+        raw += chunk
+        if len(raw) > MAX_BODY_BYTES:
+            return None
     try:
-        parsed = await request.json()
+        parsed = json.loads(raw)
     except Exception:
         return None
     return dict(parsed) if isinstance(parsed, Mapping) else None
@@ -148,7 +172,7 @@ def single_user(user_id: str = "local", *, can_edit: bool = True) -> AuthProvide
 
 
 class _SidecarBundler(Bundler):
-    """A client for the ``@speculos-harness/bundler`` sidecar.
+    """A client for the ``speculosai/harness-bundler`` sidecar.
 
     Knows two endpoints and nothing else: ``POST /bundle`` and
     ``POST /packages/install``. The distinction it draws is the one the
@@ -242,7 +266,7 @@ class HarnessAgent:
             only.
         instructions: Org-wide build brief injected into the system prompt on
             every turn (currency, fiscal year, house rules, design system).
-        bundler_url: Base URL of the ``@speculos-harness/bundler`` sidecar.
+        bundler_url: Base URL of the ``speculosai/harness-bundler`` sidecar.
         namespace: The runtime namespace bound in the prompt, generated code,
             and the preview bridge (``window.<ns>`` + ``<ns>-*`` messages).
             MUST match the frontend. Defaults to ``"app"``.
@@ -718,6 +742,26 @@ class HarnessAgent:
             if not patch:
                 return _error("no patchable fields in the body", 400)
 
+            # The object-typed fields are validated before they reach the store:
+            # `files` routes to a full-replace write, so a client bug that sends
+            # it as null/list/string would otherwise drop every file in the
+            # project (put_files with an empty map), and a stray `dependencies`
+            # string breaks the next bundle. Guard them here rather than trust
+            # the client shape.
+            for key in ("dependencies", "connections", "meta"):
+                if (
+                    key in patch
+                    and patch[key] is not None
+                    and not isinstance(patch[key], Mapping)
+                ):
+                    return _error(f"{key} must be a JSON object", 400)
+            if "files" in patch:
+                if not isinstance(patch["files"], Mapping):
+                    return _error(
+                        "files must be a JSON object of path -> content", 400
+                    )
+                patch["files"] = {str(k): str(v) for k, v in patch["files"].items()}
+
             await self.store.patch_project(project_id, patch)
             updated = await self.store.get_project(project_id)
             return _json(dict(updated or {}))
@@ -897,8 +941,17 @@ class HarnessAgent:
                 ctx["shareToken"] = token
             try:
                 result = await provider.handle(kind, payload, ctx)
-            except Exception as exc:
-                return _error(str(exc), 502)
+            except Exception:
+                # The preview iframe can read this body, so the connector's own
+                # exception text never crosses the wire: a driver error routinely
+                # embeds the DSN, host, and user. The detail stays in the server
+                # log; the browser gets a generic failure.
+                logging.getLogger(__name__).exception(
+                    "connector %r failed handling %r",
+                    getattr(provider, "name", "?"),
+                    kind,
+                )
+                return _error("the connector failed to answer this request", 502)
             return _json(result if result is not None else {})
 
         return router

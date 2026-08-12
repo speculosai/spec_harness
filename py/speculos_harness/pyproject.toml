@@ -14,16 +14,22 @@ version = "0.1.0"
 description = "Embeddable AI app-building workspace - the mountable FastAPI agent router and adapter interfaces."
 readme = "README.md"
 requires-python = ">=3.11"
-license = { text = "Apache-2.0" }
+# SPDX expression plus the license files themselves, so the sdist and the wheel
+# both carry the Apache-2.0 text and the NOTICE, as Apache-2.0 4(a)/(d) require
+# of a redistribution. The files live next to this pyproject; they are copies of
+# the repo-root LICENSE and NOTICE.
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
 keywords = ["ai", "agent", "code-generation", "fastapi", "sse", "llm", "app-builder"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Framework :: FastAPI",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Typing :: Typed",
 ]
 
@@ -53,13 +59,15 @@ postgres = [
 ]
 dev = [
     "pytest>=8.0",
-    "pytest-anyio>=0.0.0",
     "anyio>=4.0",
     "httpx>=0.27",
 ]
 
 [tool.hatch.build.targets.wheel]
 packages = ["speculos_harness"]
+# The PEP 561 marker: shipped explicitly so downstream type checkers honor the
+# package's annotations and the "Typing :: Typed" classifier is truthful.
+artifacts = ["speculos_harness/py.typed"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

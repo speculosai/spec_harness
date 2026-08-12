@@ -265,7 +265,14 @@ class _PostgresConnector(ConnectorProvider):
                 }
             )
         result = list(tables.values())
-        self._schema_cache[dsn] = (time.time() + _SCHEMA_CACHE_TTL_S, result)
+        # Evict expired entries on write so a database-per-tenant host does not
+        # retain one full catalog listing per tenant that ever made a request,
+        # including tenants long since deleted.
+        now = time.time()
+        self._schema_cache = {
+            key: value for key, value in self._schema_cache.items() if value[0] > now
+        }
+        self._schema_cache[dsn] = (now + _SCHEMA_CACHE_TTL_S, result)
         return result
 
     # -- summary + prompt ----------------------------------------------------
@@ -736,6 +743,7 @@ def postgres_connector(
     max_rows: int = 1000,
     plan_max_rows: int = 50,
     statement_timeout_ms: int = 15_000,
+    connect_timeout_s: int = 8,
 ) -> ConnectorProvider:
     """Build a Postgres connector.
 
@@ -754,6 +762,9 @@ def postgres_connector(
         plan_max_rows: Row cap for the agent's own ``run_query`` while
             building.
         statement_timeout_ms: Per-statement timeout applied server-side.
+        connect_timeout_s: How long to wait for the TCP connect before giving
+            up. A firewalled host that blackholes SYN packets would otherwise
+            pin a worker thread for the driver's default connect timeout.
 
     Returns:
         A :class:`~speculos_harness.interfaces.ConnectorProvider` to pass in
@@ -767,4 +778,5 @@ def postgres_connector(
         max_rows=max_rows,
         plan_max_rows=plan_max_rows,
         statement_timeout_ms=statement_timeout_ms,
+        connect_timeout_s=connect_timeout_s,
     )

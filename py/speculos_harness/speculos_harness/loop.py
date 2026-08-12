@@ -75,6 +75,13 @@ MAX_CONTEXT_RETRIES = 3
 #: open indefinitely and the user sees a tool card that never resolves.
 TOOL_TIMEOUT_S = 300.0
 
+#: How often the turn writes an SSE comment line while a tool runs silently.
+#: Comment frames (``: ...``) carry no event, so clients ignore them; they keep
+#: an intermediary (nginx's 60 s ``proxy_read_timeout``, Cloudflare's 100 s
+#: origin idle limit) from dropping the connection during a long, quiet tool
+#: call or a slow first byte.
+_KEEPALIVE_S = 15.0
+
 #: The CSV content part written on persistence. Readers must also accept the
 #: legacy alias (see spec/message-format.md); writers emit only this one.
 _CSV_PART = "attachment_csv"
@@ -499,6 +506,12 @@ async def run_turn(
             pass
 
     try:
+        # Flush a byte the instant the stream opens, before any slow setup, so
+        # an intermediary sees the response is live. Resolving connectors or a
+        # cold MCP mount can otherwise burn a minute with the headers already
+        # sent, which a reverse proxy reads as a hung origin.
+        yield sse.sse_comment("stream open")
+
         project = dict(await store.get_project(project_id) or {})
         files: dict[str, str] = dict(await store.get_files(project_id))
         history = sanitize_history(await store.get_messages(project_id))
@@ -676,12 +689,16 @@ async def run_turn(
                 # tokens up to the failure were still spent and still billed.
                 _report_generation(telemetry, stream, model, principal)
 
-            if failure is not None:
-                break
-
+            # Assemble and record the assistant turn before the failure check,
+            # so text the client already saw stream in is persisted even when
+            # the provider stream dies mid-generation. sanitize_history stubs
+            # any orphaned tool calls on save, so the transcript stays valid.
             assistant = _assistant_message("".join(text_parts), calls)
             if assistant is not None:
                 new_messages.append(assistant)
+
+            if failure is not None:
+                break
 
             # Driven by the presence of tool calls, not by finish_reason: some
             # providers emit tool-call deltas alongside finish_reason="stop",
@@ -728,7 +745,25 @@ async def run_turn(
                 else:
                     if getattr(tool, "mutates_files", False):
                         await _ensure_snapshot()
-                    output = await execute_tool(tool, args, tool_ctx)
+                    # Race the tool against a periodic keep-alive: a connector
+                    # call can run for minutes with nothing to stream, and a
+                    # comment line every _KEEPALIVE_S keeps the stream from
+                    # looking hung to a reverse proxy.
+                    task = asyncio.ensure_future(
+                        execute_tool(tool, args, tool_ctx)
+                    )
+                    try:
+                        while True:
+                            done, _ = await asyncio.wait(
+                                {task}, timeout=_KEEPALIVE_S
+                            )
+                            if done:
+                                break
+                            yield sse.sse_comment("keep-alive")
+                        output = await task
+                    finally:
+                        if not task.done():
+                            task.cancel()
 
                 yield sse.tool_result(tool_call_id, name, output)
                 new_messages.append(

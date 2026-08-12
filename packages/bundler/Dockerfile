@@ -33,7 +33,7 @@
 # copying a checked-in file, also keeps the install layer cacheable: the layer below
 # only re-runs when the rendered dependency set actually changes.
 # ---------------------------------------------------------------------------
-FROM oven/bun:1 AS manifest
+FROM oven/bun:1.3.12 AS manifest
 WORKDIR /gen
 COPY src/index.ts ./src/index.ts
 RUN bun --eval 'const { BASE_DEPENDENCIES } = await import("./src/index.ts"); \
@@ -41,8 +41,12 @@ RUN bun --eval 'const { BASE_DEPENDENCIES } = await import("./src/index.ts"); \
 
 # ---------------------------------------------------------------------------
 # Stage 2 - the runtime image.
+#
+# Both stages pin a concrete Bun release rather than the floating `1` tag: this is the
+# one component that runs untrusted dependency code, so its runtime and OS packages must
+# not change from under it between rebuilds. Bump the tag deliberately, not by drift.
 # ---------------------------------------------------------------------------
-FROM oven/bun:1 AS runtime
+FROM oven/bun:1.3.12 AS runtime
 
 # A dedicated unprivileged account. The build never runs as root; the self-check in
 # src/index.ts refuses to start if it finds itself at UID 0.

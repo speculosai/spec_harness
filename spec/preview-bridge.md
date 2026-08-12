@@ -141,9 +141,8 @@ If these three disagree, the failure is quiet and nasty: the preview loads fine,
 the app renders, and every data call silently returns nothing, because the
 messages the app posts don't match the types the bridge answers. This is the #1
 integration gotcha. The reference implementation consumes the namespace from one
-config constant in the prompt builder, the shim generator, and the bridge router
-so the three cannot drift, and a conformance test boots a generated app and
-asserts a live round-trip under the configured namespace.
+config constant in the prompt builder, the shim generator, and the bridge router,
+so the three cannot drift.
 
 Because the namespace is baked into every already-generated app, a deployment
 that changes it away from the value its historical apps were built with should
@@ -160,5 +159,6 @@ is styled and satisfy its own content-security policy.
   This external dependency is called out in [security.md](./security.md) - a host
   with a strict CSP or an offline requirement cannot load it.
 - **Inline option for CSP hosts.** A host that cannot allow a CDN script supplies
-  an inlined or precompiled stylesheet as `headHtml` instead. The rest of the
-  bridge is unaffected; only the styling delivery changes.
+  an inlined or precompiled stylesheet as `headHtml` instead. On the React
+  `<HarnessProvider>`, the prop that feeds this option is `previewHead`. The rest
+  of the bridge is unaffected; only the styling delivery changes.

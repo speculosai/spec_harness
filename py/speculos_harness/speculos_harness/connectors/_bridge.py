@@ -25,7 +25,7 @@ from __future__ import annotations
 
 import json
 
-#: Matches ``BRIDGE_TIMEOUT_MS`` in ``@speculos-harness/protocol``. Every
+#: Matches ``BRIDGE_TIMEOUT_MS`` in ``@speculosai/spec_harness/protocol``. Every
 #: bridge request times out here rather than hanging the app forever.
 BRIDGE_TIMEOUT_MS = 60_000
 

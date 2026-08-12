@@ -214,7 +214,7 @@ Modules are how we work with design partners: our AI-native engineers implement 
 
 ## Repo map
 
-A pnpm-workspace monorepo with the Python package under `py/`. The whole frontend is one npm package, `@speculosai/spec_harness`, with subpath entry points. Layering inside it runs one way: the `/protocol` entry depends on nothing, the adapter entries (`/preview`, `/connectors-mcp`, `/sandbox-browser`) depend only on the protocol, and the React workspace depends on the protocol and the preview host. The agent kit depends on the protocol as its Python mirror.
+An npm-workspace monorepo with the Python package under `py/`. The whole frontend is one npm package, `@speculosai/spec_harness`, with subpath entry points. Layering inside it runs one way: the `/protocol` entry depends on nothing, the adapter entries (`/preview`, `/connectors-mcp`, `/sandbox-browser`) depend only on the protocol, and the React workspace depends on the protocol and the preview host. The agent kit depends on the protocol as its Python mirror.
 
 ```
 spec_harness/
@@ -224,12 +224,12 @@ spec_harness/
 │   ├── bundle.md              #   {files, deps} -> {code, css} contract
 │   ├── message-format.md      #   OpenAI chat shape + the attachment_csv content part
 │   ├── security.md            #   null-origin iframe, --ignore-scripts, auth modes, CORS, CSP
-│   └── schema/                #   JSON Schema for the wire types
+│   └── schema/                #   home for wire-type JSON Schema (planned; see ROADMAP)
 │
 ├── packages/                  # TypeScript
 │   ├── spec_harness/          #   @speculosai/spec_harness - the one npm package
 │   │                          #     .                 <Builder>, panes, hooks
-│   │                          #     /protocol         types + JSON schema + conformance kit
+│   │                          #     /protocol         wire types, constants, adapter interfaces
 │   │                          #     /preview          iframe host + bridge
 │   │                          #     /connectors-mcp   reference connector
 │   │                          #     /sandbox-browser  optional in-browser bundler

@@ -23,7 +23,7 @@
     "docker:build": "docker build -t speculosai/harness-bundler ."
   },
   "engines": {
-    "bun": ">=1.1.0"
+    "bun": ">=1.2.0"
   },
   "devDependencies": {
     "bun-types": "^1.1.0"

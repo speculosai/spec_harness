@@ -156,8 +156,9 @@ is the headline use case, so here is the secure path end to end:
    is a silent-no-data bug, not a security hole, but it is the most common
    integration failure.
 5. **Serve the preview head under your CSP.** The default styling loads Tailwind
-   from a CDN; a strict-CSP host supplies an inlined stylesheet as `headHtml`
-   instead.
+   from a CDN; a strict-CSP host supplies an inlined stylesheet as the `headHtml`
+   option instead (on the React `<HarnessProvider>`, that option is the
+   `previewHead` prop).
 
 ## The non-negotiable invariants, in one place
 

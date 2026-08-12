@@ -115,6 +115,11 @@ followed by `data: <json>\n\n`. There are **exactly seven** event names in
 protocol v1. A client MUST ignore any event name it does not recognize (this is
 what keeps additive minor versions safe).
 
+A server MAY also interleave SSE **comment lines** (`: …`) as keep-alives - for
+example during a long tool call that produces no tokens for a while, to stop an
+intermediary buffering or timing out the connection. A client MUST ignore any
+line beginning with `:`; it carries no data and is not an event.
+
 | `event:` | `data` | Client action / normative rule |
 |---|---|---|
 | `user-message` | `{ text }` | **Client MUST ignore.** The user's bubble was already rendered optimistically when the request was sent. A client that renders this event double-renders the user's message. |
@@ -248,8 +253,9 @@ absent, the client MUST assume **protocol-1 defaults** and proceed:
 | Attachments | `["image", "csv"]` |
 | Model routing | off |
 | Model list | none (hide the picker) |
+| Snapshots | endpoint may exist (a 404 hides the timeline) |
 
 These defaults describe a straightforward protocol-1 server, so a client that
 falls back this way still works against any conforming backend that predates the
-capabilities endpoint. The conformance kit ships a no-capabilities fixture that
-pins this behavior.
+capabilities endpoint. The reference client and server both implement this
+fallback, so it does not silently change.

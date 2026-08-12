@@ -543,18 +543,20 @@ class SQLiteProjectStore(_BaseProjectStore):
                     json.dumps(record["messages"], ensure_ascii=False, default=str),
                 ),
             )
-            if record["kind"] == "pre-turn":
-                # Keep the most recent SNAPSHOT_KEEP pre-turn snapshots; that
-                # is the depth the version timeline exposes as restorable.
-                self._db.execute(
-                    "delete from snapshots where id in ("
-                    "  select id from snapshots"
-                    "   where project_id=? and kind='pre-turn'"
-                    "   order by created_at desc, rowid desc"
-                    "   limit -1 offset ?"
-                    ")",
-                    (id, SNAPSHOT_KEEP),
-                )
+            # Prune per kind: keep the most recent SNAPSHOT_KEEP of whichever
+            # kind this row is. Undo snapshots inline the whole file map and the
+            # whole transcript, so pruning only pre-turn would let the undo
+            # history grow a full project copy per rollback click, unlisted and
+            # unreachable through the API.
+            self._db.execute(
+                "delete from snapshots where id in ("
+                "  select id from snapshots"
+                "   where project_id=? and kind=?"
+                "   order by created_at desc, rowid desc"
+                "   limit -1 offset ?"
+                ")",
+                (id, record["kind"], SNAPSHOT_KEEP),
+            )
             self._db.execute("commit")
         except Exception:
             self._db.execute("rollback")
@@ -918,14 +920,14 @@ class FsProjectStore(_BaseProjectStore):
         directory = self._dir(id) / "snapshots"
         directory.mkdir(parents=True, exist_ok=True)
         self._write_json(directory / f"{record['id']}.json", record)
-        if record["kind"] != "pre-turn":
-            return
-        # Keep the most recent SNAPSHOT_KEEP pre-turn snapshots.
+        # Keep the most recent SNAPSHOT_KEEP snapshots of this row's own kind.
+        # Undo snapshots inline the whole project, so pruning only pre-turn
+        # would let the undo history grow a full copy per rollback click.
         entries = sorted(
             (
                 (str(loaded.get("createdAt") or ""), path)
                 for path, loaded in self._iter_snapshots(id)
-                if loaded.get("kind") == "pre-turn"
+                if loaded.get("kind") == record["kind"]
             ),
             key=lambda pair: pair[0],
         )

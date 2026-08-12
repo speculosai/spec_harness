@@ -43,6 +43,7 @@ import '@speculosai/spec_harness/styles.css'
 | `brand` | `{ name, Logo? }` | Product name and a logo slot. See [White-labeling](#white-labeling-brand-and-strings). |
 | `strings` | `Record<string,string>` or a `t()` function | Overrides every UI label. Defaults to built-in English. |
 | `connectors` | `ConnectorProvider[]` | The client halves (bridge/shim) of your connectors. Omit for file/package tools only. See [Connectors](./connectors.md). |
+| `previewHead` | `string` | The preview document's `<head>`. Defaults to the preview package's head, which loads Tailwind from a CDN; a host under a strict CSP passes a precompiled, inlined stylesheet here instead. |
 
 ### Identity: the `auth` prop
 
@@ -145,7 +146,8 @@ function CustomBuilder({ projectId }: { projectId: string }) {
 
   return (
     <div className="split">
-      <iframe srcDoc={preview.srcDoc} sandbox={preview.sandbox} />  {/* sandbox attrs come from the package - never hand-write them */}
+      {/* ref binds the data bridge; sandbox attrs come from the package - never hand-write them */}
+      <iframe ref={preview.ref} srcDoc={preview.srcDoc} sandbox={preview.sandbox} />
       <MyChatUI items={chat.items} onSend={chat.send} busy={chat.busy} />
     </div>
   )
@@ -161,6 +163,12 @@ Two contracts the hooks encode so you cannot get them wrong:
 - **The once-per-rebuild auto-fix.** `useHarnessPreview` calls `onError` at most
   once per `rebuildKey`. The guard lives inside the hook, so a custom layout
   cannot accidentally build an infinite fix loop.
+
+And one wiring step the hooks cannot do for you: **attach `preview.ref` to the
+iframe.** The parent half of the data bridge binds to that element, so without it
+the frame renders but every `window.<ns>` call times out with no one listening -
+and the runtime-error channel that feeds `onError` (the runtime half of auto-fix)
+never installs, so only build failures reach it.
 
 And one you must not override: the `sandbox` attribute comes from the package
 (`preview.sandbox`). It is security-load-bearing and non-configurable - see
@@ -298,7 +306,8 @@ why.
    generated apps. A mismatch is a silent-no-data bug, not a security hole, but
    it is the most common integration failure.
 5. **Serve the preview head under your CSP.** The default styling loads Tailwind
-   from a CDN; a strict-CSP host supplies an inlined stylesheet instead (see
+   from a CDN; a strict-CSP host supplies an inlined stylesheet instead, by
+   passing it as the `<HarnessProvider previewHead>` prop above (see
    [`spec/bundle.md`](../spec/bundle.md) and
    [Configuration](./configuration.md)).
 

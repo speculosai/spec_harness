@@ -106,6 +106,15 @@ export function buildTree(files: FileMap): FileTreeNode[] {
 }
 
 /**
+ * FileExplorer and VersionTimeline both mount this hook, so both would otherwise issue
+ * the same `GET /projects/{id}` - the whole file map and message history - on every
+ * rebuild bump. This shares one in-flight request across the hook instances of a given
+ * provider, then forgets it once it settles so a later refresh still re-reads. Keyed by
+ * the provider's stable `requestJson`, so two providers never share a request.
+ */
+const inFlightProjects = new WeakMap<object, Map<string, Promise<Project | null>>>();
+
+/**
  * The read-only file explorer + version history as a hook: the tree, per-turn diffs,
  * the snapshot timeline, and restore - all read-only, backed by data that already flows
  * through the store.
@@ -128,15 +137,31 @@ export function useHarnessFiles(opts: UseHarnessFilesOptions): HarnessFiles {
   const loadedOnce = useRef(false);
 
   const loadProject = useCallback(async (): Promise<Project | null> => {
-    try {
-      const project = await requestJson<Project>(`/projects/${encodeURIComponent(projectId)}`);
+    const cacheKey = `${projectId}:${rebuildKey}`;
+    let byKey = inFlightProjects.get(requestJson);
+    if (!byKey) {
+      byKey = new Map();
+      inFlightProjects.set(requestJson, byKey);
+    }
+    let inFlight = byKey.get(cacheKey);
+    if (!inFlight) {
+      // `loadProject` never rejects, so the shared promise resolves to `null` on failure
+      // rather than rejecting into every awaiter.
+      inFlight = requestJson<Project>(`/projects/${encodeURIComponent(projectId)}`).catch(() => null);
+      byKey.set(cacheKey, inFlight);
+      const map = byKey;
+      const settled = inFlight;
+      void settled.finally(() => {
+        if (map.get(cacheKey) === settled) map.delete(cacheKey);
+      });
+    }
+    const project = await inFlight;
+    if (project) {
       filesRef.current = project.files ?? {};
       messagesRef.current = (project.messages ?? []) as ChatMessage[];
-      return project;
-    } catch {
-      return null;
     }
-  }, [projectId, requestJson]);
+    return project;
+  }, [projectId, rebuildKey, requestJson]);
 
   const loadVersions = useCallback(async (): Promise<void> => {
     // The server already told us it keeps none; do not ask it to 404 for us.
