@@ -32,6 +32,7 @@
   },
   "workspaces": [
     "packages/*",
-    "examples/minimal/web"
+    "examples/minimal/web",
+    "examples/frontend-only"
   ]
 }

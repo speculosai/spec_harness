@@ -1,0 +1,30 @@
+<!doctype html>
+<!-- data-harness-theme pins the workspace light; without it the package follows the
+     OS through `prefers-color-scheme`, and the landing page has no dark look to match. -->
+<html lang="en" data-harness-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Speculos Harness - frontend-only demos</title>
+    <style>
+      /*
+       * The workspace fills its container (`.harness-root` is `height: 100%`), so the
+       * container needs a height of its own. The landing page scrolls inside the same
+       * box. This is the only styling index.html owns.
+       */
+      html,
+      body,
+      #root {
+        height: 100%;
+      }
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
