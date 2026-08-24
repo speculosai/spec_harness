@@ -28,7 +28,7 @@ import '@speculosai/spec_harness/styles.css'
 
 ## The other pieces
 
-- **Backend** - the agent kit is a Python package (`speculos-harness` on PyPI); it mounts a FastAPI router.
+- **Backend** - the agent kit is a Python package (`speculos-harness`, PyPI publish pending); it mounts a FastAPI router.
 - **Build service** - the `speculosai/harness-bundler` container turns the project's files into browser-ready code.
 
 See the [repository](https://github.com/speculosai/spec_harness) for the quickstart, the protocol spec, and the embedding guide.

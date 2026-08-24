@@ -7,8 +7,8 @@ the capability handshake, and the security invariants that hold the whole thing
 together.
 
 It is the source of truth. The npm package (`@speculosai/spec_harness`, with its
-`/preview` host and `/protocol` types), the Python kit (`speculos-harness` on
-PyPI), and the build service (the `speculosai/harness-bundler` image) are
+`/preview` host and `/protocol` types), the Python kit (`speculos-harness`,
+PyPI publish pending), and the build service (the `speculosai/harness-bundler` image) are
 implementations of what is written here. A third party may implement either side
 from this spec alone and interoperate. This is the same contract the production
 engine behind Speculos speaks, which is what lets that engine qualify as a

@@ -13,7 +13,8 @@ not rewritten. One loop, in one language, on the revenue path.
 ## Install
 
 ```bash
-pip install speculos-harness
+# PyPI publish pending - until then, install straight from the repo:
+pip install "git+https://github.com/speculosai/spec_harness#subdirectory=py/speculos_harness"
 ```
 
 Requires Python 3.11+.

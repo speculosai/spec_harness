@@ -1,20 +1,27 @@
 # The agent service for the connector example: the same FastAPI app as the
 # minimal example, plus the Postgres driver extra and two MCP servers.
 #
-# To run this example instead of the minimal one, point the `agent` service in
-# ../minimal/docker-compose.yml at this directory:
+# Like the minimal example, the build context is the repository root, so the
+# image installs the agent kit from this checkout rather than from PyPI. That
+# is what lets a fresh clone run before anything is published. To run this
+# example instead of the minimal one, point the `agent` service in
+# ../minimal/docker-compose.yml at this Dockerfile:
 #
 #     agent:
-#       build: ../with-connectors
+#       build:
+#         context: ../..
+#         dockerfile: examples/with-connectors/Dockerfile
 
 FROM python:3.12-slim
 
 WORKDIR /app
 
-COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+# The agent kit with the Postgres extra, installed from source. Copied before
+# the example so editing main.py does not reinstall the dependency tree.
+COPY py/speculos_harness /app/kit
+RUN pip install --no-cache-dir "/app/kit[postgres]" "uvicorn[standard]>=0.29"
 
-COPY main.py ./
+COPY examples/with-connectors/main.py ./
 
 EXPOSE 8000
 

@@ -34,7 +34,7 @@ def test_package_imports_public_api() -> None:
     ):
         assert hasattr(sh, name), f"missing public export: {name}"
 
-    assert sh.__version__ == "0.1.0"
+    assert sh.__version__ == "0.1.1"
 
 
 def test_principal_and_auth_denied_are_usable() -> None:

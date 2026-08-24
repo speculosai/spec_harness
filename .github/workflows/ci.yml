@@ -1,0 +1,59 @@
+# CI runs the same commands CONTRIBUTING.md tells a contributor to run.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  ts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+
+  selfcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run selfcheck
+
+  py:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e "py/speculos_harness[dev]"
+      - run: pytest py/speculos_harness/tests
+      # The version lives in three places; fail if they ever drift again.
+      - name: version drift
+        run: |
+          python - <<'EOF'
+          import json, re, sys, pathlib
+          pyproject = pathlib.Path("py/speculos_harness/pyproject.toml").read_text()
+          init = pathlib.Path("py/speculos_harness/speculos_harness/__init__.py").read_text()
+          pkg = json.loads(pathlib.Path("packages/spec_harness/package.json").read_text())
+          v_toml = re.search(r'^version = "([^"]+)"', pyproject, re.M).group(1)
+          v_init = re.search(r'^__version__ = "([^"]+)"', init, re.M).group(1)
+          v_npm = pkg["version"]
+          if not (v_toml == v_init == v_npm):
+              sys.exit(f"version drift: pyproject={v_toml} __init__={v_init} npm={v_npm}")
+          print(f"version {v_toml} consistent")
+          EOF

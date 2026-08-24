@@ -62,6 +62,10 @@ RUN bun install --ignore-scripts
 # directly, so there is no separate bundle step to keep in sync.
 COPY src ./src
 
+# The image is publicly distributed, so it carries its license terms.
+COPY LICENSE NOTICE ./
+LABEL org.opencontainers.image.licenses="Apache-2.0"
+
 # The working directory is the resolution root: `bun add` writes package.json, the
 # lockfile and node_modules into it at runtime, and builds happen in .builds/ beneath
 # it. It has to be owned by the account that does the work.

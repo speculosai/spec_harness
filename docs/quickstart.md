@@ -120,7 +120,8 @@ headless hooks, styling, and white-labeling are in [Embedding](./embedding.md).
 ### 3. Install and mount the backend
 
 ```bash
-pip install speculos-harness
+# PyPI publish pending - until then, install straight from the repo:
+pip install "git+https://github.com/speculosai/spec_harness#subdirectory=py/speculos_harness"
 ```
 
 The backend is a single router you mount on an existing FastAPI application, or

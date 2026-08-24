@@ -1,8 +1,10 @@
 # Connector example - dependencies.
 
-# The mountable agent router, with the Postgres driver extra. The MCP connector
-# needs nothing beyond the base package.
-speculos-harness[postgres]
+# The mountable agent router with the Postgres driver extra, installed from
+# this checkout. Once it is on PyPI this becomes a plain
+# `speculos-harness[postgres]`. The MCP connector needs nothing beyond the
+# base package.
+-e ../../py/speculos_harness[postgres]
 
 # The ASGI server used to run this example. Any ASGI server works.
 uvicorn[standard]>=0.29

@@ -41,7 +41,8 @@
     "src",
     "!src/preview.self-check.ts",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "NOTICE"
   ],
   "peerDependencies": {
     "react": ">=18",

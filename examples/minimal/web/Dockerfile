@@ -1,8 +1,8 @@
 # The web service: this example's Vite app, serving the <Builder> embed.
 #
 # The build context is the repository root (see the compose files). The example
-# depends on the workspace packages, which are not published yet, so the image
-# installs them from this checkout through the root npm workspace.
+# installs the workspace packages from this checkout through the root npm
+# workspace, so it always exercises the repo's code rather than a published copy.
 #
 # It runs the dev server rather than a static build, because that is what an
 # example is for: edit BuilderPage.tsx and the page reloads. For production you

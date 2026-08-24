@@ -12,7 +12,7 @@ it against their real data, and it runs in place. It is the engine behind
 same code, not a reference reimplementation.
 
 It ships as three pieces: one npm frontend package (`@speculosai/spec_harness`),
-a Python backend router (`speculos-harness` on PyPI), and a build-service
+a Python backend router (`speculos-harness`, PyPI publish pending), and a build-service
 container (`speculosai/harness-bundler`). Start with the
 [Quickstart](./quickstart.md).
 

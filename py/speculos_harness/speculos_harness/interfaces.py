@@ -1,12 +1,12 @@
 """Adapter interfaces for Speculos Harness.
 
 These are the Python 1:1 mirror of the TypeScript interfaces that live in
-`@speculosai/spec_harness/protocol`. The wire *data* types (SSE event payloads,
-``Project``, ``Snapshot``, capabilities, ``ConnectorSummary``) are generated
-from a single zod source; the *behavioral* interfaces below (methods, async
-iterables, abort signals - things JSON Schema cannot express) are
-hand-maintained 1:1 in both languages, guarded by a signature-drift check and
-the shared conformance suite every reference adapter must pass.
+`@speculosai/spec_harness/protocol`. Both the wire *data* types (SSE event
+payloads, ``Project``, ``Snapshot``, capabilities, ``ConnectorSummary``) and
+the *behavioral* interfaces below (methods, async iterables, abort signals)
+are hand-maintained 1:1 in both languages and kept in sync by review (see
+CONTRIBUTING.md). Machine-checkable schemas and conformance fixtures are
+planned - see ROADMAP.md and spec/schema/.
 
 Every interface has a shipped OSS default, so the core boots with zero
 configuration.

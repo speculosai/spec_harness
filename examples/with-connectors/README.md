@@ -81,16 +81,19 @@ Copy `.env.example` to `.env` and fill in your values (all placeholders):
 
 This directory carries its own `requirements.txt` and `Dockerfile`, so point the
 `agent` service in [`../minimal/docker-compose.yml`](../minimal/docker-compose.yml)
-at it:
+at it (the context stays the repository root, like the minimal example, so the
+kit installs from this checkout):
 
 ```yaml
 agent:
-  build: ../with-connectors
+  build:
+    context: ../..
+    dockerfile: examples/with-connectors/Dockerfile
 ```
 
 Two things differ from the minimal example. The Postgres driver is an optional
-extra, so this example installs `speculos-harness[postgres]` rather than the base
-package. And `DATABASE_URL` has to point at a database you supply - the compose
+extra, so this example installs the kit with the `[postgres]` extra rather than
+the base package. And `DATABASE_URL` has to point at a database you supply - the compose
 file has no `db` service, on the assumption that a real deployment already has
 one. Add one if you want the example self-contained.
 

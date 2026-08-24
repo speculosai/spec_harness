@@ -2,7 +2,7 @@
 
 What ships today: the builder workspace, the agent and its mountable FastAPI router, the build service, the versioned wire protocol, and the reference Postgres and MCP connectors. That is a complete product. Clone it, add one key, and a user can describe an app and get one.
 
-This file is the longer version of the "Coming to the core" line in the [README](./README.md).
+This file is the longer version of the "Coming next" line in the [README](./README.md).
 
 ## Coming to the core
 
