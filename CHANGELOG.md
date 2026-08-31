@@ -2,20 +2,21 @@
 
 The three artifacts (npm `@speculosai/spec_harness`, pip `speculos-harness`,
 image `speculosai/harness-bundler`) share one version number, and CI fails on
-drift between them. npm is at 0.1.2; the image is still at 0.1.1; **the PyPI
-publish is still pending**, so the Python kit installs from this repository.
+drift between them. npm and the image are at 0.1.2; **the PyPI publish is still
+pending**, so the Python kit installs from this repository.
 
 ## 0.1.2 - 2026-08-31
 
-npm is published. The image for this version is **built and verified but not
-pushed** - no registry credential is available on the machine that builds it,
-so Docker Hub still serves 0.1.1 under both `0.1.2`'s absence and `latest`.
-Pushing it is a credential away:
+npm and the image are published. The image is a multi-arch manifest
+(linux/amd64 + linux/arm64) under both `0.1.2` and `latest`, matching what
+0.1.0 and 0.1.1 shipped.
 
-    docker build -t speculosai/harness-bundler:0.1.2 \
-                 -t speculosai/harness-bundler:latest packages/bundler
-    docker login && docker push speculosai/harness-bundler:0.1.2
-    docker push speculosai/harness-bundler:latest
+Build it the same way it was published - a plain `docker build` on an x86 host
+produces an amd64-only image, and pushing that to `latest` silently drops
+arm64 support for every Apple Silicon and Graviton user:
+
+    docker buildx build --platform linux/amd64,linux/arm64 \
+      -t speculosai/harness-bundler:<version> --push packages/bundler
 
 - The npm README no longer claims the Python kit is on PyPI - it is not, and
   0.1.1 shipped that claim to the registry page where a commit could not reach
