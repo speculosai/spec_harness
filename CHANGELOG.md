@@ -2,19 +2,27 @@
 
 The three artifacts (npm `@speculosai/spec_harness`, pip `speculos-harness`,
 image `speculosai/harness-bundler`) share one version number, and CI fails on
-drift between them. Only two are published: npm and the image are at 0.1.1;
-**the PyPI publish is still pending**, so the Python kit installs from this
-repository.
+drift between them. npm is at 0.1.2; the image is still at 0.1.1; **the PyPI
+publish is still pending**, so the Python kit installs from this repository.
 
-## 0.1.2 - prepared, NOT yet published
+## 0.1.2 - 2026-08-31
 
-Version stamps are bumped and the tarball is correct; the npm publish itself
-still has to be run. Until it is, the live registry page for 0.1.1 keeps
-serving the stale README.
+npm is published. The image for this version is **built and verified but not
+pushed** - no registry credential is available on the machine that builds it,
+so Docker Hub still serves 0.1.1 under both `0.1.2`'s absence and `latest`.
+Pushing it is a credential away:
+
+    docker build -t speculosai/harness-bundler:0.1.2 \
+                 -t speculosai/harness-bundler:latest packages/bundler
+    docker login && docker push speculosai/harness-bundler:0.1.2
+    docker push speculosai/harness-bundler:latest
 
 - The npm README no longer claims the Python kit is on PyPI - it is not, and
   0.1.1 shipped that claim to the registry page where a commit could not reach
   it. `NOTICE` now ships in the tarball too.
+- The image carries its own `LICENSE` and `NOTICE` and an
+  `org.opencontainers.image.licenses` label. It is publicly distributed, so it
+  has to carry its terms; 0.1.1 shipped without them.
 
 - The five Cloud behaviours the platform plan lists as drift ports: anti-stall
   ("act, don't narrate"), the inlined-dataset write guard, the Tailwind font

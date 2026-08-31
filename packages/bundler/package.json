@@ -1,6 +1,6 @@
 {
   "name": "harness-bundler",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "The Speculos Harness build-service sidecar - {files, deps} in, {code, css} out. Ships as the locked-down container image speculosai/harness-bundler.",
   "license": "Apache-2.0",
   "homepage": "https://speculos.ai",
