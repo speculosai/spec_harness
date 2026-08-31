@@ -66,8 +66,10 @@ dev = [
 [tool.hatch.build.targets.wheel]
 packages = ["speculos_harness"]
 # The PEP 561 marker: shipped explicitly so downstream type checkers honor the
-# package's annotations and the "Typing :: Typed" classifier is truthful.
-artifacts = ["speculos_harness/py.typed"]
+# package's annotations and the "Typing :: Typed" classifier is truthful. The
+# template UI kit is a real .tsx asset templates.py reads at import time, so it
+# must ship in the wheel too or `import speculos_harness.templates` breaks.
+artifacts = ["speculos_harness/py.typed", "speculos_harness/template_assets/*.tsx"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

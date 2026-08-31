@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import re
 from dataclasses import dataclass
 from typing import Any, AsyncIterator, Mapping, Optional, Sequence
 
@@ -85,6 +86,67 @@ _KEEPALIVE_S = 15.0
 #: The CSV content part written on persistence. Readers must also accept the
 #: legacy alias (see spec/message-format.md); writers emit only this one.
 _CSV_PART = "attachment_csv"
+
+
+# ---------------------------------------------------------------------------
+# Anti-stall: act, don't narrate
+# ---------------------------------------------------------------------------
+#
+# The "preamble then stop" failure: the model announces an action ("I'll update
+# the table...") and ends the step with ZERO tool calls, so the turn ends and
+# nothing changes - the user has to ask twice. On a build turn (tools offered,
+# nothing mutated yet) the loop re-asks the SAME turn once, with tool use forced
+# and a short nudge appended. The predicate is deliberately narrow: long
+# answers, clarifying questions, and plan-mode choice blocks are real replies,
+# not stalls.
+
+#: Matches an intent-to-act opener at the start of the text or a sentence:
+#: first-person commitments ("I'll", "I will", "I'm going to", "let me ...") and
+#: gerund action verbs, across a few languages. "I'll need" (a request for
+#: input) and "let me know" (a sign-off) are deliberately excluded.
+_ACT_INTENT_RE = re.compile(
+    r"(?:^|[\n.!?]\s+)(?:"
+    r"i\s?['’]?ll\b(?!\s+need)|i\s+will\b|i\s+am\s+going\s+to|"
+    r"i\s?['’]?m\s+(?:going\s+to|about\s+to)|let\s+me(?!\s+know|\s+explain|\s+describe|\s+walk|\s+show|\s+summari[sz]e|\s+clarify)|"
+    r"i\s?['’]?m\s+(?:updat|add|switch|chang|build|creat|appl|fix|rewrit|convert|implement|styl)\w*|"
+    r"(?:updating|adding|switching|changing|building|creating|applying|fixing|rewriting|converting|implementing)\b|"
+    r"je\s+vais|je\s+(?:mets|passe|ajoute|change|modifie|remplace|corrige)\b|on\s+va\b|"
+    r"voy\s+a|vamos\s+a|ich\s+werde|ich\s+(?:aktualisiere|ändere|füge|baue)\b"
+    r")",
+    re.IGNORECASE,
+)
+
+
+def _is_stalled_preamble(text: str) -> bool:
+    """Whether an assistant message is an intent-to-act that called no tool.
+
+    Narrow by construction so it fires on the real stall and stays silent on
+    legitimate text-only replies: an empty or long message is a real answer, a
+    trailing ``?`` is a genuine clarifying question, and a ``harness-choices``
+    fence is a plan-mode choice block. "Let me *explain*" and its relatives are
+    excluded too - they introduce an answer, not an edit, and forcing a tool
+    call on one turns a question into an unrequested change.
+    """
+    t = (text or "").strip()
+    if not t or len(t) > 800:  # long answers are real answers
+        return False
+    if t.endswith("?"):  # a genuine clarifying question
+        return False
+    if "harness-choices" in t:  # a plan-mode choices block
+        return False
+    return bool(_ACT_INTENT_RE.search(t[:400]))
+
+
+#: Appended (never persisted) to the transcript on the nudge retry. It names the
+#: built-in file tools by their wire names, so it travels with them.
+_NUDGE_TEXT = (
+    "You announced an action but called no tool, so NOTHING changed in the "
+    "project. Act now in this same turn: call read_file if you need the "
+    "file's exact current text, then edit_file (preferred) or write_file to "
+    "apply the change. Do not reply with prose again. If the request is "
+    "genuinely ambiguous, call read_file on the most relevant file first - "
+    "then ask ONE short question in the message after the tool result."
+)
 
 
 @dataclass
@@ -613,6 +675,7 @@ async def run_turn(
         )
         model = str(cfg.get("model") or getattr(llm, "model", ""))
         supports_cache = bool(cfg.get("supports_prompt_cache", cfg.get("supportsPromptCache")))
+        cache_ttl = cfg.get("cache_ttl", cfg.get("cacheTtl")) or None
 
         seeded = initial_messages(
             system_prompt, history, message, attachments=attachments
@@ -627,6 +690,12 @@ async def run_turn(
 
         context_attempt = 0
         failure: Optional[str] = None
+        # Anti-stall state, per turn. `nudged` caps the nudge at one per turn;
+        # `mutated_this_turn` records whether any mutating tool has succeeded
+        # (after which a text-only step is a real summary, not a stall).
+        nudged = False
+        nudge_step = -1
+        mutated_this_turn = False
 
         for _step in range(steps):
             if is_aborted(signal):
@@ -636,19 +705,48 @@ async def run_turn(
             calls: dict[int, dict[str, str]] = {}
             stream: Any = None
 
+            # The step right after a nudge re-asks the same turn with tool use
+            # forced (enforcement, not a second suggestion). `force_tools` is
+            # cleared if the provider rejects forcing, so the retry can proceed.
+            is_nudge_retry = nudged and _step == nudge_step + 1
+            force_tools = is_nudge_retry and bool(tool_schemas)
+
             while True:
                 notes: list[str] = []
+                # The nudge rides as the last message so it sits directly after
+                # the stalled assistant turn. It is never appended to
+                # new_messages, so it steers this turn without being persisted
+                # or replayed on the next one.
+                windowed = [system_message, *new_messages]
+                if is_nudge_retry:
+                    windowed.append({"role": "user", "content": _NUDGE_TEXT})
                 prepared = fit_to_window(
-                    [system_message, *new_messages],
+                    windowed,
                     supports_prompt_cache=supports_cache,
+                    cache_ttl=cache_ttl if supports_cache else None,
                     attempt=context_attempt,
                     on_note=notes.append,
                 )
                 for note in notes:
                     yield sse.text_delta(f"_{note}_\n\n")
 
+                # Force a tool call on the nudge retry. The forcing rides in the
+                # provider passthrough (cfg["extra"]) rather than a new stream()
+                # parameter, so no provider signature changes; a provider that
+                # cannot force simply has the param dropped and the nudge stays
+                # advisory.
+                call_cfg = cfg
+                if force_tools:
+                    call_cfg = {
+                        **cfg,
+                        "extra": {
+                            **dict(cfg.get("extra") or {}),
+                            "tool_choice": "required",
+                        },
+                    }
+
                 try:
-                    stream = llm.stream(prepared, tool_schemas, cfg, signal)
+                    stream = llm.stream(prepared, tool_schemas, call_cfg, signal)
                     async for delta in stream:
                         text, call = _delta_parts(delta)
                         if text:
@@ -671,6 +769,13 @@ async def run_turn(
                     raise
                 except Exception as exc:
                     produced = bool(text_parts or calls)
+                    # A provider that rejects forced tool use gets one retry
+                    # with the forcing removed - worst case the nudge stays
+                    # advisory. Like the context retry below, only when nothing
+                    # streamed yet; the rejection lands before the first token.
+                    if force_tools and not produced and "tool_choice" in str(exc).lower():
+                        force_tools = False
+                        continue
                     # Only retry a step that produced nothing: a context-window
                     # error always lands before the first token, and retrying
                     # after partial output would duplicate it on the client.
@@ -704,6 +809,26 @@ async def run_turn(
             # providers emit tool-call deltas alongside finish_reason="stop",
             # and trusting that would leave unanswered tool calls in history.
             if not calls:
+                # Anti-stall: the model announced an action and stopped without
+                # calling a tool. Nudge once per turn, only while tools are
+                # offered and nothing has been mutated yet (a read-then-stall is
+                # the same failure one step later; a closing summary after real
+                # edits is not). The next step both carries the nudge and, via
+                # `force_tools`, re-asks with tool use forced.
+                if (
+                    not nudged
+                    and not mutated_this_turn
+                    and tool_schemas  # None in plan mode
+                    and _is_stalled_preamble("".join(text_parts))
+                ):
+                    nudged = True
+                    nudge_step = _step
+                    if _step + 1 < steps:
+                        continue
+                    # No step left to retry into. Falling through to `continue`
+                    # here would exhaust the loop and trigger the for/else
+                    # runaway note - telling the user the build stopped after N
+                    # tool steps when in fact the model never called one.
                 break
 
             for index in sorted(calls):
@@ -766,6 +891,15 @@ async def run_turn(
                             task.cancel()
 
                 yield sse.tool_result(tool_call_id, name, output)
+                # A successful mutating tool means the turn has already changed
+                # the project, so a later text-only step is a real summary, not
+                # a stall: the nudge must not fire after this point.
+                if (
+                    tool is not None
+                    and getattr(tool, "mutates_files", False)
+                    and output.get("ok") is not False
+                ):
+                    mutated_this_turn = True
                 new_messages.append(
                     {
                         "role": "tool",

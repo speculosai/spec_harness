@@ -15,6 +15,8 @@ from .files import (
     WriteFileTool,
     WriteValidator,
     builtin_file_tools,
+    inlined_dataset_validator,
+    InlinedDatasetError,
 )
 
 __all__ = [
@@ -25,4 +27,6 @@ __all__ = [
     "InstallPackageTool",
     "WriteValidator",
     "builtin_file_tools",
+    "inlined_dataset_validator",
+    "InlinedDatasetError",
 ]

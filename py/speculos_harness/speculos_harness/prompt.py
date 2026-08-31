@@ -98,6 +98,25 @@ HARD RULES - these patterns waste output tokens and produce worse UX
   hand-rolling something a library does better - stop and pick the library.\
 """
 
+_STYLING_GOTCHAS = """\
+STYLING GOTCHAS - Tailwind arbitrary values that compile to the WRONG property
+These fail SILENTLY - no error, no warning, the declaration is simply dropped.
+- In an arbitrary value an unescaped underscore IS a space, so a multi-word font
+  family MUST be quoted. font-[Playfair_Display,serif] compiles to
+  `font-weight: Playfair Display,serif` - invalid, so the browser drops it and
+  the font never changes. Quote every comma part that has a space:
+  font-['Playfair_Display',serif]; or use font-[family-name:...]; or an inline
+  style={{ fontFamily: "'Playfair Display',serif" }}. write_file and edit_file
+  repair this exact mistake on the way in and say so in their result - when you
+  see that note, use the corrected class from then on.
+- text-[X] sets a COLOR unless X is a length: text-[Arial] means `color: Arial`
+  (dead). Font sizes are text-[16px] or text-[length:var(--s)]. Never set a font
+  family with text-[].
+- When the user says a styling change "isn't updating", assume the class
+  compiled to the wrong property: read_file, then move that one property to an
+  inline style - do NOT re-apply the same class.\
+"""
+
 _TOOL_DISCIPLINE = """\
 USING THE TOOLS
 - You are shown the file LIST, never file contents. Before you edit a file, or
@@ -206,7 +225,10 @@ PLAN MODE RULES
 
 _WORKFLOW = """\
 WORKFLOW
-1. Say what you are about to do in one or two sentences.
+1. Act in the SAME turn. A sentence of intent is fine, but the tool calls that
+   do the work must follow it in this very response - never announce a change
+   and stop, which leaves the project untouched and forces the user to ask
+   twice.
 2. Read what you are about to change: read_file every file you will edit or
    depend on.
 3. Build the whole thing. If the user asked for an app, write the app - do not
@@ -222,8 +244,16 @@ NEVER PRINT CODE IN CHAT
 - Do not preface an edit with "here's the updated component".
 - After the tools run, summarise the EFFECT in a sentence or two ("the table
   now has sticky headers and sorts by balance"). The user sees the diff.
-- The only prose worth writing is a one-line plan before the tools and a
-  one-line summary after.\
+- Do not ask "would you like me to update the file?" - JUST UPDATE THE FILE.
+  A sentence of intent and the tool calls that act on it belong in the SAME
+  turn.
+    BAD: the user says "make the header bigger" and the whole reply is "I'll
+    update the header styling to a larger size." with no tool call - nothing
+    changed and the user has to ask again.
+    GOOD: one sentence of intent, then read_file and edit_file in the SAME
+    turn.
+- The only prose worth writing is a one-line plan immediately followed by the
+  tool calls it describes, and a one-line summary after they run.\
 """
 
 _INSTRUCTIONS_FRAMING = """\
@@ -249,6 +279,178 @@ CONNECTED DATA
   build with clearly-labelled sample data and tell the user, in one line, that
   attaching a data source will make it live.)\
 """
+
+
+# The tool-discipline variant used when the project is small enough that every
+# non-kit file's contents are inlined under CURRENT PROJECT: the read-first rule
+# would otherwise contradict the fact that the contents are already on screen.
+_TOOL_DISCIPLINE_INLINE = """\
+USING THE TOOLS
+- The project's files are small, so their full current contents are shown under
+  CURRENT PROJECT below (the UI kit excepted - it is documented under TEMPLATE
+  UI KIT). Do NOT call read_file for a file whose contents are printed there: it
+  returns exactly what you already see and wastes a round trip. Go straight to
+  write_file / edit_file, copying edit_file's old_string verbatim from the shown
+  contents.
+- Prefer edit_file. write_file streams the entire file as output tokens; a
+  10 KB rewrite is tens of seconds the user watches. edit_file streams only the
+  changed region. Reach for write_file only when the file is new, when you are
+  rewriting most of it, or when the change is structural across the file.
+  "Restyle this card", "fix this string", "add a button", "tweak the query" are
+  all edit_file.
+- edit_file's search string must match EXACTLY ONCE. If it does not, widen it
+  with neighbouring lines until it does; a failed match leaves the file
+  untouched and costs a round trip.
+- Use install_package only for a library outside the always-available set
+  above. Those are already resolved - just import them.\
+"""
+
+
+#: Contents-inlining budget for CURRENT PROJECT. When every file OTHER than the
+#: UI kit fits in this many characters, their full text is inlined so the model
+#: can write or edit on the first turn without spending a round trip on
+#: read_file. All-or-nothing: a partial inline would make "which files must I
+#: still read?" ambiguous.
+_INLINE_BUDGET = 4000
+
+#: The template UI kit path. Never inlined or read - it is documented in full
+#: under TEMPLATE UI KIT - and it is excluded from the inline budget.
+_KIT_PATH = "/components/ui.tsx"
+
+#: A class string unique to the starter /App.tsx placeholder, used to tell a
+#: fresh scaffold from a real app so the first-build note fires only once. Must
+#: track the placeholder in speculos_harness.templates (_REACT_TS_APP).
+_SCAFFOLD_MARKER = "h-12 w-12 rounded-2xl bg-slate-900"
+
+
+#: The TEMPLATE UI KIT block. A/B-validated wording; keep its six load-bearing
+#: elements intact (ownership framing, the 60-120 line budget, the verbatim
+#: import lines, the FORBIDDEN symptom->component table, the canonical skeleton,
+#: and the "the docs ARE the file" no-read clause). `<ns>` is the only templated
+#: token; everything else is literal. Contract mirror of the kit asset shipped
+#: at _KIT_PATH by speculos_harness.templates.
+_UI_KIT_BLOCK = """\
+TEMPLATE UI KIT — /components/ui.tsx (ALREADY IN THIS PROJECT — COMPOSE IT, NEVER REBUILD IT)
+
+Page chrome, stat tiles, chart cards, the sortable/searchable/paginated table,
+and the loading/error/empty states are ALREADY WRITTEN, styled, and tested in
+/components/ui.tsx. Your job is to COMPOSE them and write the data fetch — not
+to re-implement them. A finished dashboard is 60-120 lines. If your App.tsx is
+heading past 150 lines you are re-typing the kit; stop and import it instead.
+
+ALWAYS start App.tsx with these two lines, copied verbatim:
+
+  import { PageShell, KpiCard, ChartCard, DataTable, LoadingState, ErrorBanner, EmptyState, useAsyncData } from "./components/ui"
+  import type { Column } from "./components/ui"
+
+(Drop any name you don't use. `recharts` chart parts and `lucide-react` icons
+are separate imports, as usual.)
+
+EXACT API — this is the COMPLETE contract. No other props exist; do not invent any.
+
+  PageShell({ title, subtitle?, actions?, children })
+      Whole-page chrome: white header bar (title+subtitle left, `actions` right)
+      over a bg-slate-50 min-h-screen page with a centered max-w-7xl main that
+      already applies space-y-6 between its children. Wrap your WHOLE app in it.
+
+  KpiCard({ label, value, sub?, icon? })
+      One stat tile. `value` is a ReactNode (pre-format your numbers).
+      `icon` is a lucide-react component itself, not an element:
+      icon={DollarSign}  — NOT icon={<DollarSign />}.
+
+  ChartCard({ title, subtitle?, height?, children })
+      Card + heading + a `height`px box (default 256) that already wraps
+      `children` in recharts' <ResponsiveContainer width="100%" height="100%">.
+      `children` is ONE recharts chart element (<BarChart>, <AreaChart>, …).
+      NEVER write <ResponsiveContainer> yourself — ChartCard is it.
+
+  type Column<T> = { key: string; label: string; render?: (row: T) => React.ReactNode;
+                     sortValue?: (row: T) => string | number; align?: 'left' | 'right' }
+
+  DataTable<T>({ data, columns, searchable?, pageSize?, emptyTitle? })
+      Search + click-header sorting (direction toggles) + pagination
+      (Prev/Next, "Page x of y", row count) are ALREADY BUILT IN. You pass rows
+      and columns; that is all. Default cell = render?.(row) ?? String(row[key] ?? '—').
+      Sorting/searching use `sortValue` when given, else the raw field.
+      pageSize defaults to 10.
+
+  LoadingState({ label? })    centered spinner
+  ErrorBanner({ message })    red error banner
+  EmptyState({ title, body? }) centered muted "nothing here" block
+
+  useAsyncData<T>(fetcher: () => Promise<T>): { data: T | null; loading: boolean; error: string | null }
+      Runs `fetcher` ONCE on mount, catches, and never sets state after unmount.
+      There is NO deps argument. Define the fetcher as a module-level async
+      function (or a useCallback) so it is stable.
+      `error` is already a STRING — pass it straight through as
+      <ErrorBanner message={error} />. It is not an Error, so `error.message`
+      is a type error. `data` is null until loaded: `const rows = data ?? []`.
+
+FORBIDDEN — each of these is the kit's job, and hand-rolling it is a BUG that
+costs thousands of output tokens and ships a worse-looking app:
+  - Writing a <header> / page wrapper / `min-h-screen bg-slate-50` container    → PageShell
+  - Writing a `rounded-2xl border ... p-5` stat-tile div                        → KpiCard
+  - Writing <ResponsiveContainer> or a chart wrapper card                       → ChartCard
+  - Writing useState for search text / sort key / sort dir / page number,
+    or .filter/.sort/.slice for a table, or Prev/Next buttons, or <thead>/<tbody> → DataTable
+  - install_package or importing @tanstack/react-table for a table              → DataTable
+  - Writing a spinner, a red error box, or an "no data" block                   → LoadingState / ErrorBanner / EmptyState
+  - Writing useState+useEffect+a cancelled flag to fetch on mount               → useAsyncData
+
+CANONICAL SHAPE — a whole dashboard is this short. Copy this skeleton:
+
+  import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts"
+  import { DollarSign } from "lucide-react"
+  import { PageShell, KpiCard, ChartCard, DataTable, LoadingState, ErrorBanner, useAsyncData } from "./components/ui"
+  import type { Column } from "./components/ui"
+
+  type Row = { name: string; stage: string; revenue: number }
+
+  async function fetchRows(): Promise<Row[]> {
+    const r = await window.<ns>.<connector>.callTool("<name>", { /* resolved args */ })
+    if (r?.error || r?.result?.error) throw new Error(String(r?.error ?? r?.result?.error))
+    const d = r?.result?.data ?? r?.data
+    return (d?.records ?? []).map((rec: any) => ({ /* map fields */ }))
+  }
+
+  export default function App() {
+    const { data, loading, error } = useAsyncData(fetchRows)
+    if (loading) return <LoadingState label="Loading…" />
+    if (error) return <ErrorBanner message={error} />
+    const rows = data ?? []
+    const columns: Column<Row>[] = [
+      { key: "name", label: "Deal" },
+      { key: "revenue", label: "Revenue", align: "right",
+        render: (d) => "$" + d.revenue.toLocaleString(), sortValue: (d) => d.revenue },
+    ]
+    return (
+      <PageShell title="…" subtitle="…">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <KpiCard label="Pipeline" value="$1.2M" sub="all stages" icon={DollarSign} />
+        </div>
+        <ChartCard title="Revenue by stage">
+          <BarChart data={byStage}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+            <XAxis dataKey="stage" /><YAxis /><Tooltip />
+            <Bar dataKey="revenue" fill="#7c3aed" radius={[6, 6, 0, 0]} />
+          </BarChart>
+        </ChartCard>
+        <DataTable data={rows} columns={columns} searchable pageSize={10} />
+      </PageShell>
+    )
+  }
+
+The kit's full API is documented above — that IS the file. You never need to
+open /components/ui.tsx, and you must not edit it.
+"""
+
+
+#: Appended to the kit block when /App.tsx is still the fresh starter scaffold.
+_UI_KIT_FIRST_BUILD = (
+    "\nFIRST BUILD: the current /App.tsx is only the placeholder scaffold "
+    "(shown under CURRENT PROJECT), so build the app in ONE write_file to "
+    "/App.tsx - a full rewrite, not an edit.\n"
+)
 
 
 # ---------------------------------------------------------------------------
@@ -513,27 +715,116 @@ def _render_files(files: Any) -> str:
     return "\n".join(sorted(str(p) for p in paths))
 
 
-def _render_project(ctx: Mapping[str, Any]) -> str:
-    """The CURRENT PROJECT section: the file list, never the file contents.
+def _has_kit(files: Any) -> bool:
+    """Whether the project ships the template UI kit at :data:`_KIT_PATH`."""
+    if isinstance(files, Mapping):
+        return _KIT_PATH in files
+    if isinstance(files, (list, tuple, set, frozenset)):
+        return _KIT_PATH in {str(p) for p in files}
+    return False
 
-    Listing paths rather than bodies is what makes read_file worth calling and
-    keeps a large project from re-sending itself on every turn.
+
+def _render_ui_kit(files: Any, ns: str) -> str:
+    """The TEMPLATE UI KIT section - only when the project actually ships it.
+
+    The kit is a real file in the project (``/components/ui.tsx``); this block is
+    its documented public contract, so the model composes the kit instead of
+    re-implementing page chrome, tables, and chart cards. When ``/App.tsx`` is
+    still the starter placeholder, a short first-build note is appended.
     """
-    file_list = _render_files(ctx.get("files"))
+    if not _has_kit(files):
+        return ""
+    block = _UI_KIT_BLOCK.replace("<ns>", ns)
+    app = files.get("/App.tsx") if isinstance(files, Mapping) else None
+    if isinstance(app, str) and _SCAFFOLD_MARKER in app:
+        block += _UI_KIT_FIRST_BUILD
+    return block
+
+
+def _should_inline_files(files: Any) -> bool:
+    """Whether every non-kit file fits the inline budget.
+
+    Only a real file map (path -> content) can be inlined; a bare path list
+    carries no contents, so it always takes the file-list path. The UI kit is
+    excluded from the budget - it is documented in full under TEMPLATE UI KIT
+    and shown as present, never inlined.
+    """
+    if not isinstance(files, Mapping):
+        return False
+    non_kit = [c for p, c in files.items() if p != _KIT_PATH]
+    if not non_kit:
+        return False
+    try:
+        total = sum(len(str(c)) for c in non_kit)
+    except Exception:
+        return False
+    return total <= _INLINE_BUDGET
+
+
+def _inline_files_block(files: Mapping[str, Any]) -> str:
+    """Every non-kit file inlined verbatim, with the kit noted as present.
+
+    All-or-nothing: either every non-kit file's contents are shown (so the model
+    never has to guess which it must still read) or none are. The kit is shown
+    as a one-line PRESENT marker, never its body - it is large, stable, fully
+    documented under TEMPLATE UI KIT, and must not be read or edited.
+    """
+    chunks: list[str] = []
+    for path in sorted(p for p in files if p != _KIT_PATH):
+        chunks.append(f"--- {path} ---\n```tsx\n{files[path]}\n```")
+    if _KIT_PATH in files:
+        chunks.append(
+            f"--- {_KIT_PATH} ---\nPRESENT. Kit file - do NOT read it and do NOT "
+            "edit it. Its complete public API is documented under TEMPLATE UI KIT "
+            "above; that documentation IS the contract."
+        )
+    return (
+        "FILE CONTENTS ARE SHOWN BELOW - do NOT call read_file for them. "
+        "read_file on a file printed here returns exactly what you already see "
+        "and wastes a whole round trip.\n" + "\n".join(chunks)
+    )
+
+
+def _render_files_section(files: Any) -> str:
+    """The Files portion of CURRENT PROJECT: inlined contents, or a path list.
+
+    A small project (every non-kit file within :data:`_INLINE_BUDGET`) has its
+    files inlined verbatim so the first turn can write or edit without a
+    read_file round trip; a larger one is shown as just the path list, the
+    signal that read_file is worth calling. The UI kit is never inlined, but its
+    path still appears in the list form.
+    """
+    if _should_inline_files(files):
+        return _inline_files_block(files)
+    file_list = _render_files(files)
+    if not file_list:
+        return ""
+    return (
+        "Files (contents NOT shown - call read_file(path) to view one):\n"
+        + file_list
+    )
+
+
+def _render_project(ctx: Mapping[str, Any]) -> str:
+    """The CURRENT PROJECT section: the project's files and declared deps.
+
+    Small projects inline every non-kit file's contents so the first turn can
+    write or edit without a read_file round trip; larger ones list the paths and
+    lean on read_file. Either way the template id and any extra dependencies are
+    named so the model knows what it is starting from.
+    """
+    files = ctx.get("files")
     template = ctx.get("template")
     deps = ctx.get("dependencies")
 
-    if not file_list and not template and not deps:
+    files_block = _render_files_section(files)
+    if not files_block and not template and not deps:
         return ""
 
     lines = ["CURRENT PROJECT"]
     if template:
         lines.append(f"Template: {template}")
-    if file_list:
-        lines.append("Files (contents NOT shown - call read_file(path) to view one):")
-        lines.append(file_list)
-    else:
-        lines.append("Files: (empty project - write /index.tsx first)")
+    lines.append(files_block or "Files: (empty project - write /index.tsx first)")
     if isinstance(deps, Mapping) and deps:
         rendered = ", ".join(f"{k}@{v}" for k, v in sorted(deps.items()))
         lines.append(f"Installed beyond the always-available set: {rendered}")
@@ -603,6 +894,7 @@ def build_system_prompt(
     ns = _resolve_namespace(namespace)
     context: Mapping[str, Any] = dict(ctx or {})
     has_connectors = bool(connectors)
+    inline_files = _should_inline_files(context.get("files"))
 
     sections: list[str] = []
 
@@ -613,12 +905,19 @@ def build_system_prompt(
     sections.append(_BASE.replace("<ns>", ns))
     sections.append(_libraries_block())
     sections.append(_HARD_RULES)
+    sections.append(_STYLING_GOTCHAS)
+
+    kit = _render_ui_kit(context.get("files"), ns)
+    if kit:
+        sections.append(kit)
 
     if not plan_mode:
         tool_block = _render_tools(tools, context)
         if tool_block:
             sections.append(tool_block)
-        sections.append(_TOOL_DISCIPLINE)
+        sections.append(
+            _TOOL_DISCIPLINE_INLINE if inline_files else _TOOL_DISCIPLINE
+        )
 
     if has_connectors:
         sections.append(_RUNTIME_API.replace("<ns>", ns))

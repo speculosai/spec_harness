@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
+from pathlib import Path
 from types import MappingProxyType
 from typing import Any, Mapping, Optional
 
@@ -185,6 +186,19 @@ class Template:
         }
 
 
+#: The pre-built UI kit shipped in every new ``react-ts`` project as
+#: ``/components/ui.tsx``. The agent COMPOSES it - page chrome, stat tiles,
+#: chart cards, a sortable/searchable/paginated table, and the
+#: loading/error/empty states - instead of hand-rolling them, which roughly
+#: halves first-build output and wall time and removes a recurring
+#: doesn't-compile failure. Kept as a real ``.tsx`` asset so it stays editable
+#: and lintable; its public contract is the TEMPLATE UI KIT block in
+#: :mod:`speculos_harness.prompt` - keep the two in sync.
+_UI_KIT = (
+    Path(__file__).resolve().parent / "template_assets" / "ui.tsx"
+).read_text(encoding="utf-8")
+
+
 _REACT_TS_INDEX = """\
 import { createRoot } from "react-dom/client"
 import App from "./App"
@@ -230,11 +244,15 @@ TEMPLATES: dict[str, Template] = {
     "react-ts": Template(
         id="react-ts",
         label="React + TypeScript",
-        description="An /index.tsx entry and a placeholder /App.tsx. The default.",
+        description=(
+            "An /index.tsx entry, a placeholder /App.tsx, and a "
+            "/components/ui.tsx UI kit. The default."
+        ),
         files=MappingProxyType(
             {
                 "/index.tsx": _REACT_TS_INDEX,
                 "/App.tsx": _REACT_TS_APP,
+                "/components/ui.tsx": _UI_KIT,
             }
         ),
     ),

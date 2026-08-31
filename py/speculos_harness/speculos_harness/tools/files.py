@@ -183,6 +183,339 @@ def _validate(
     return rewritten, None
 
 
+# --- Inlined-dataset write guard ------------------------------------------
+# A deterministic, connector-agnostic backstop for the prose rule "never inline
+# fetched data": when a live data source is connected, the running app must
+# fetch its rows at RUNTIME (through the ``window.<ns>`` bridge), never bake a
+# fetched snapshot into source. A baked dataset is stale on arrival AND turns
+# every later edit into a full-file rewrite (a large output-token cost). It
+# fires only when the host says a source is connected, so a deployment whose
+# apps have genuinely static content is unaffected. Wired in through the
+# :data:`WriteValidator` seam: it raises to reject, and the fix recipe rides the
+# exception message.
+_INLINE_MIN_FILE_BYTES = 8_000
+_INLINE_MAX_ELEMENTS = 40
+_INLINE_MAX_SPAN_BYTES = 12_000
+_INLINE_FETCH_PRESENT_ELEMENTS = 80  # relax once the file already fetches live
+_INLINE_AGG_SPAN_BYTES = 24_000  # backstop: dataset split across several consts
+_INLINE_SOURCE_EXTS = (".ts", ".tsx", ".js", ".jsx")
+_INLINE_ROWLIKE_KEYS = {
+    "id", "uuid", "_id", "createdat", "created_at", "updatedat", "updated_at",
+    "date", "timestamp", "email", "user_id", "userid", "name", "title",
+    "amount", "price", "status", "count", "firstname", "lastname",
+}
+_INLINE_DATE_RE = re.compile(r'"\d{4}-\d{2}-\d{2}')
+_INLINE_KEY_RE = re.compile(r'(?:([A-Za-z_]\w*)|"([^"]+)"|\'([^\']+)\')\s*:')
+
+
+class InlinedDatasetError(ValueError):
+    """Raised by :func:`inlined_dataset_validator` to reject a write that bakes a
+    fetched dataset into source. Its message is the fix recipe; the
+    :data:`WriteValidator` seam surfaces ``str(exc)`` to the model verbatim, so
+    the model reads the recipe and self-corrects on its next step."""
+
+
+def _scan_object_arrays(content: str) -> list[tuple[int, int, int, int]]:
+    """For each array literal whose elements are object literals
+    (``[{...},{...}]``), return ``(direct_child_object_count, span_bytes, start,
+    end)``. A single pass that respects strings (``'`` ``\"`` `` ` ``) and ``//``
+    and ``/* */`` comments. Never raises; unbalanced tails are simply dropped."""
+    out: list[tuple[int, int, int, int]] = []
+    stack: list[dict[str, Any]] = []
+    in_str: Optional[str] = None
+    line_comment = False
+    block_comment = False
+    i, n = 0, len(content)
+
+    def mark_first(kind: str) -> None:
+        if stack and stack[-1]["kind"] == "[" and not stack[-1]["first_set"]:
+            stack[-1]["first"] = kind
+            stack[-1]["first_set"] = True
+
+    while i < n:
+        c = content[i]
+        d = content[i + 1] if i + 1 < n else ""
+        if line_comment:
+            if c == "\n":
+                line_comment = False
+            i += 1
+            continue
+        if block_comment:
+            if c == "*" and d == "/":
+                block_comment = False
+                i += 2
+            else:
+                i += 1
+            continue
+        if in_str is not None:
+            if c == "\\":
+                i += 2
+                continue
+            if c == in_str:
+                in_str = None
+            i += 1
+            continue
+        if c == "/" and d == "/":
+            line_comment = True
+            i += 2
+            continue
+        if c == "/" and d == "*":
+            block_comment = True
+            i += 2
+            continue
+        if c in ("'", '"', "`"):
+            mark_first("string")
+            in_str = c
+            i += 1
+            continue
+        if c == "[":
+            mark_first("[")
+            stack.append({"kind": "[", "start": i, "count": 0, "first": None, "first_set": False})
+            i += 1
+            continue
+        if c == "{":
+            if stack and stack[-1]["kind"] == "[":
+                mark_first("{")
+                stack[-1]["count"] += 1
+            stack.append({"kind": "{"})
+            i += 1
+            continue
+        if c == "}":
+            if stack and stack[-1]["kind"] == "{":
+                stack.pop()
+            i += 1
+            continue
+        if c == "]":
+            if stack and stack[-1]["kind"] == "[":
+                f = stack.pop()
+                if f["first"] == "{":
+                    out.append((f["count"], i - f["start"] + 1, f["start"], i + 1))
+            i += 1
+            continue
+        if c not in (" ", "\t", "\r", "\n", ","):
+            mark_first("other")
+        i += 1
+    return out
+
+
+def _has_rowlike_keys(text: str) -> bool:
+    keys: set[str] = set()
+    for m in _INLINE_KEY_RE.finditer(text):
+        k = (m.group(1) or m.group(2) or m.group(3) or "").lower()
+        if k:
+            keys.add(k)
+        if len(keys) > 80:
+            break
+    return bool(keys & _INLINE_ROWLIKE_KEYS)
+
+
+def _detect_inlined_dataset(
+    path: str, content: str, namespace: str = "app"
+) -> Optional[dict[str, Any]]:
+    """Describe the worst inlined object-array row-set in a source file, or
+    ``None`` if nothing crosses the threshold. Cheap; never raises. A file that
+    already fetches live (``window.<ns>`` / ``.query(`` / ``.callTool(``) is held
+    to a looser element cap, since a handful of literal rows beside a real fetch
+    is fixtures, not a baked snapshot."""
+    if not path.endswith(_INLINE_SOURCE_EXTS):
+        return None
+    if len(content) < _INLINE_MIN_FILE_BYTES:
+        return None
+    fetches_live = (
+        f"window.{namespace}" in content
+        or ".query(" in content
+        or ".callTool(" in content
+    )
+    elem_cap = _INLINE_FETCH_PRESENT_ELEMENTS if fetches_live else _INLINE_MAX_ELEMENTS
+    try:
+        arrays = _scan_object_arrays(content)
+    except Exception:
+        return None
+    if not arrays:
+        return None
+    arrays.sort(key=lambda a: (a[0], a[1]), reverse=True)
+    count, span, s0, s1 = arrays[0]
+    agg_span = sum(a[1] for a in arrays)
+    span_text = content[s0:s1]
+    rowlike = (len(_INLINE_DATE_RE.findall(span_text)) >= 3) or _has_rowlike_keys(span_text)
+    if not rowlike:
+        return None
+    over_single = count > elem_cap or span > _INLINE_MAX_SPAN_BYTES
+    over_agg = agg_span > _INLINE_AGG_SPAN_BYTES and count >= 2
+    if over_single or over_agg:
+        return {"count": count, "span": span}
+    return None
+
+
+def _inlined_dataset_message(info: Mapping[str, Any], namespace: str) -> str:
+    """The fix recipe carried on the rejection. The seam prefixes it with
+    ``write to <path> rejected:``, so it does not repeat the path."""
+    kb = round(info["span"] / 1024, 1)
+    ns = namespace
+    return (
+        f"it inlines a fetched dataset (an array of ~{info['count']} object "
+        f"literals, ~{kb} KB). The app must fetch its own data at RUNTIME, not "
+        "ship a snapshot - baked-in rows are stale on arrival and make every "
+        "later edit a full-file rewrite. Rewrite so the file holds the COMPONENT "
+        "and the QUERY, never the rows:\n"
+        "  1. Delete the inlined array (e.g. `const RAW = [ ... ]`).\n"
+        "  2. const [rows, setRows] = useState([]); "
+        "const [err, setErr] = useState(null)\n"
+        "  3. Fetch on mount in useEffect through the runtime bridge, using the\n"
+        "     snake_case <name> of the connected data source:\n"
+        f"       SQL source:  const {{ rows }} = await window.{ns}.<name>.query(sql, params)\n"
+        f"       Tool source: const r = await window.{ns}.<name>.callTool(tool, args)\n"
+        "                    then read the rows off r (for a tool that returns JSON\n"
+        "                    in text: JSON.parse(r.content[0].text).<field>)\n"
+        "     Both are async: call inside useEffect, never during render, and\n"
+        "     always check for an error before you render.\n"
+        "  4. Render from state; show loading and empty states.\n"
+        "Only values the USER typed (a fixed status list, palette, axis labels, "
+        "column definitions, or resolved query params like ids/dates) may stay "
+        "hard-coded - never the rows."
+    )
+
+
+def inlined_dataset_validator(
+    has_data_source: bool | Callable[[], bool] = False,
+    *,
+    namespace: str = "app",
+) -> WriteValidator:
+    """A :data:`WriteValidator` that rejects source files which bake a fetched
+    dataset (a large array of object literals) into the code while a live data
+    source is connected. Deterministic and connector-agnostic; pass it to
+    ``HarnessAgent(..., write_validator=...)`` or ``builtin_file_tools`` and it
+    covers both ``write_file`` and ``edit_file``.
+
+    Args:
+        has_data_source: Whether a live data source is connected. Either a
+            ``bool``, or a zero-arg callable resolved on each write - so a host
+            that shares one long-lived validator across projects can back it
+            with the current turn's state (e.g. a ``ContextVar``'s ``.get``).
+            Defaults to ``False``: with no source info the validator is a no-op,
+            exactly as the guard is gated off when nothing is connected, so a
+            deployment that only serves static content is never touched.
+        namespace: The runtime namespace written into the fix recipe and used to
+            recognise a file that already fetches live (``window.<ns>``).
+            Defaults to ``"app"``, the harness default; pass the deployment's
+            own namespace so the recipe names the right global.
+
+    Returns:
+        A ``(path, content) -> content`` validator: it returns the content
+        unchanged when the write is allowed and raises
+        :class:`InlinedDatasetError` (whose message is the fix recipe) to reject
+        it.
+    """
+
+    def _validate(path: str, content: str) -> str:
+        has_source = (
+            has_data_source() if callable(has_data_source) else bool(has_data_source)
+        )
+        if not has_source:
+            return content
+        info = _detect_inlined_dataset(path, content, namespace)
+        if info is None:
+            return content
+        raise InlinedDatasetError(_inlined_dataset_message(info, namespace))
+
+    return _validate
+
+
+# --- Tailwind arbitrary font-family autofix ----------------------------------
+# A Tailwind arbitrary font-family class - font-[...] - is dead CSS when a comma
+# part holds an unquoted space: the compiler's familyName() rule (tailwindcss
+# 3.4, lib/util/dataTypes.js) rejects such a value for font-family, so font-[...]
+# falls through to font-weight and the browser SILENTLY drops the declaration -
+# no error, no warning, the style simply never applies. In an arbitrary value an
+# unescaped underscore IS a space, so font-[Playfair_Display,serif] is the usual
+# trap. Rewriting the dead value to its quoted form cannot change any valid
+# semantics, because the pre-fix declaration was already invalid CSS. Purely
+# deterministic: no model, no network.
+_TW_FONT_ARB_RE = re.compile(r"font-\[([^\]\s]+)\]")
+
+#: Only rewrite classes in files the bundler actually feeds to Tailwind - never
+#: touch a doc or data file that merely mentions a class name in prose.
+_TW_AUTOFIX_EXTS = (".tsx", ".ts", ".jsx", ".js", ".html", ".css")
+
+#: Attached to a write/edit result when a repair happened, so the model learns
+#: the class it wrote was corrected and reuses the fixed form next time.
+_TW_AUTOFIX_NOTE = (
+    "One or more font-[...] classes named a multi-word family without quoting "
+    "it, which Tailwind compiles to font-weight (dead CSS); they were rewritten "
+    "to the quoted font-family form. Use the corrected text if you edit this "
+    "region again."
+)
+
+
+def _tw_normalize_part(raw: str) -> str:
+    """Resolve one comma part the way the compiler sees it: an unescaped ``_``
+    becomes a space and an escaped ``\\_`` stays a literal underscore, then trim.
+
+    Order matters and mirrors the compiler - underscores become spaces *before*
+    the trim, so ``font-[Georgia,_serif]`` reads ``_serif`` -> `` serif`` ->
+    ``serif`` and is correctly seen as valid rather than flagged.
+    """
+    return raw.replace("\\_", "\x00").replace("_", " ").strip()
+
+
+def _tw_font_parts_broken(value: str) -> bool:
+    """Whether ``value`` is a ``font-[...]`` arbitrary value Tailwind would
+    compile to the wrong property. An explicit type hint (``family-name:...``)
+    or a ``var(...)`` reference is always honored, so neither is ever flagged.
+    """
+    if ":" in value.split("(")[0]:  # an explicit type hint, e.g. family-name:
+        return False
+    if value.startswith("var("):
+        return False
+    for raw in value.split(","):
+        part = _tw_normalize_part(raw)
+        quoted = (part[:1], part[-1:]) in (("'", "'"), ('"', '"'))
+        if " " in part and not quoted:
+            return True
+    return False
+
+
+def _tw_autofix(content: str) -> tuple[str, list[dict[str, str]]]:
+    """Rewrite every provably-dead ``font-[...]`` class in ``content`` to its
+    quoted font-family form. Returns the new content and one ``{from, to, why}``
+    record per class changed (an empty list when nothing was)."""
+    fixes: list[dict[str, str]] = []
+
+    def _sub(match: "re.Match[str]") -> str:
+        value = match.group(1)
+        if not _tw_font_parts_broken(value):
+            return match.group(0)
+        parts: list[str] = []
+        for raw in value.split(","):
+            part = _tw_normalize_part(raw)
+            quoted = (part[:1], part[-1:]) in (("'", "'"), ('"', '"'))
+            if " " in part and not quoted:
+                # Leading/trailing underscores are spaces the compiler trims;
+                # drop them so the quoted name carries no stray space.
+                parts.append("'" + raw.strip().strip("_") + "'")
+            else:
+                parts.append(raw.strip())
+        fixed = "font-[" + ",".join(parts) + "]"
+        fixes.append(
+            {
+                "from": match.group(0),
+                "to": fixed,
+                "why": "unquoted multi-word family compiled to font-weight (dead CSS)",
+            }
+        )
+        return fixed
+
+    return _TW_FONT_ARB_RE.sub(_sub, content), fixes
+
+
+def _tw_autofix_for_path(path: str, content: str) -> tuple[str, list[dict[str, str]]]:
+    """Autofix ``content`` only when ``path`` names a file the bundler feeds to
+    Tailwind; otherwise return it unchanged with no fixes."""
+    if not path.lower().endswith(_TW_AUTOFIX_EXTS):
+        return content, []
+    return _tw_autofix(content)
+
+
 class _FileTool(AgentTool):
     """Base for the built-in tools: carries name/schema/mutates_files and
     default no-op ``available`` / ``prompt_fragment``."""
@@ -271,6 +604,11 @@ class WriteFileTool(_FileTool):
         if files is None:
             return _fail(load_err or "could not read the project files")
 
+        # Repair provably-dead Tailwind arbitrary font-family classes on the way
+        # in, before the host validator runs, so the validator sees exactly what
+        # will be persisted and the receipt below reflects the stored bytes.
+        content, font_fixes = _tw_autofix_for_path(path, content)
+
         checked, reason = _validate(self.write_validator, path, content)
         if checked is None:
             return _fail(reason or "write rejected")
@@ -285,7 +623,11 @@ class WriteFileTool(_FileTool):
         save_err = await _save_files(ctx, files)
         if save_err:
             return _fail(save_err)
-        return {"ok": True, "path": path, "bytes": len(checked)}
+        result: dict[str, Any] = {"ok": True, "path": path, "bytes": len(checked)}
+        if font_fixes:
+            result["autofixed"] = font_fixes
+            result["note"] = _TW_AUTOFIX_NOTE
+        return result
 
 
 class EditFileTool(_FileTool):
@@ -298,6 +640,11 @@ class EditFileTool(_FileTool):
     Locates the single match, applies ``new_string`` (through the optional
     ``write_validator``), and full-replaces the map back. On 0 or >1 matches it
     returns a failure result naming which case it hit - never a partial write.
+    An edit whose ``old_string`` equals its ``new_string`` is refused up front -
+    it would change nothing, and the model must never be able to claim success
+    for a no-op. A successful result carries ``bytesBefore``/``bytesAfter`` and a
+    ``changed`` flag, so a caller can tell a real edit from one a write validator
+    neutralized.
     """
 
     name = "edit_file"
@@ -385,6 +732,11 @@ class EditFileTool(_FileTool):
                 "old_string must not be empty - an empty match is ambiguous "
                 "by definition; use write_file to replace the whole file"
             )
+        if old == new:
+            return _fail(
+                "old_string and new_string are identical - this edit would "
+                "change nothing; re-read the file and make a real change."
+            )
 
         files, load_err = await _load_files(ctx)
         if files is None:
@@ -412,7 +764,12 @@ class EditFileTool(_FileTool):
                 "surrounding context so it matches exactly once."
             )
 
-        updated = source.replace(old, new, 1)
+        # Repair the incoming replacement text only - never the file's untouched
+        # regions. Rewriting elsewhere would desync the model's memory of the
+        # file, and its next old_string (remembered from before this edit) would
+        # stop matching. The fix rides along inside new_string.
+        new_fixed, font_fixes = _tw_autofix_for_path(path, new)
+        updated = source.replace(old, new_fixed, 1)
         checked, reason = _validate(self.write_validator, path, updated)
         if checked is None:
             return _fail(reason or "write rejected")
@@ -421,7 +778,24 @@ class EditFileTool(_FileTool):
         save_err = await _save_files(ctx, files)
         if save_err:
             return _fail(save_err)
-        return {"ok": True, "path": path, "bytes": len(checked), "replacements": 1}
+        result: dict[str, Any] = {
+            "ok": True,
+            "path": path,
+            "bytes": len(checked),
+            "replacements": 1,
+            # A real receipt: never let the model claim success for an edit that
+            # changed nothing (e.g. a write validator that rewrote the
+            # replacement back to what was already there). bytesBefore/bytesAfter
+            # and changed compare the file the edit landed on (source) against
+            # what was actually persisted (checked).
+            "bytesBefore": len(source),
+            "bytesAfter": len(checked),
+            "changed": checked != source,
+        }
+        if font_fixes:
+            result["autofixed"] = font_fixes
+            result["note"] = _TW_AUTOFIX_NOTE
+        return result
 
 
 class ReadFileTool(_FileTool):

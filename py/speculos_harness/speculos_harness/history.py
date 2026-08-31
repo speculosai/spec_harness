@@ -935,6 +935,7 @@ def fit_to_window(
     *,
     token_budget: Optional[int] = None,
     supports_prompt_cache: bool = False,
+    cache_ttl: Optional[str] = None,
     attempt: int = 0,
     on_note: Optional[Callable[[str], None]] = None,
 ) -> list[ChatMessage]:
@@ -976,4 +977,6 @@ def fit_to_window(
     if on_note is not None and level > 0:
         on_note(_describe(len(sanitized), len(shaped)))
 
-    return cache_breakpoint(shaped, supports_prompt_cache=supports_prompt_cache)
+    return cache_breakpoint(
+        shaped, supports_prompt_cache=supports_prompt_cache, ttl=cache_ttl
+    )

@@ -27,6 +27,7 @@ rate limits, and spend logs.
 
 from __future__ import annotations
 
+import re
 import time
 from typing import Any, AsyncIterable, AsyncIterator, Mapping, Optional, Sequence
 
@@ -275,6 +276,21 @@ class _LiteLLMStream:
                     pass
 
 
+#: The spellings providers accept for an extended cache window.
+_CACHE_TTL_RE = re.compile(r"^\s*\d+[smh]\s*$")
+
+
+def _valid_cache_ttl(value: Any) -> Optional[str]:
+    if not isinstance(value, str) or not value.strip():
+        return None
+    ttl = value.strip()
+    if not _CACHE_TTL_RE.match(ttl):
+        raise ValueError(
+            f"cache_ttl must be a duration like '5m' or '1h', got {value!r}"
+        )
+    return ttl
+
+
 class LiteLLMProvider(LLMProvider):
     """A LiteLLM-backed model provider.
 
@@ -302,6 +318,7 @@ class LiteLLMProvider(LLMProvider):
         api_base: Optional[str] = None,
         allowed_models: Optional[Sequence[str]] = None,
         supports_prompt_cache: bool = False,
+        cache_ttl: Optional[str] = None,
         extra: Optional[Mapping[str, Any]] = None,
     ) -> None:
         if not isinstance(model, str) or not model.strip():
@@ -317,6 +334,13 @@ class LiteLLMProvider(LLMProvider):
         # rejected unless a host deliberately publishes a menu.
         self._allowed_models: Sequence[str] = menu or (self.model,)
         self.supports_prompt_cache = supports_prompt_cache
+        # An extended prompt-cache TTL (e.g. "5m", "1h") survives human-paced
+        # pauses the provider default does not; hosts that pay for it plumb it
+        # here. Validated on the way in, because it is stamped onto every
+        # cache_control block and an unrecognised value is rejected by the
+        # provider for the whole request - a misconfigured `3600` would break
+        # every turn rather than just losing the cache.
+        self.cache_ttl = _valid_cache_ttl(cache_ttl)
         self.extra: Mapping[str, Any] = dict(extra or {})
 
     def config_for(self, ctx: Mapping[str, Any]) -> LLMCallConfig:
@@ -353,6 +377,8 @@ class LiteLLMProvider(LLMProvider):
             "model": model or self.model,
             "supports_prompt_cache": bool(self.supports_prompt_cache),
         }
+        if self.cache_ttl:
+            cfg["cache_ttl"] = self.cache_ttl
         if self.api_key:
             cfg["api_key"] = self.api_key
         if self.api_base:
