@@ -6,10 +6,15 @@ drift between them. Only two are published: npm and the image are at 0.1.1;
 **the PyPI publish is still pending**, so the Python kit installs from this
 repository.
 
-## Unreleased
+## 0.1.2 - prepared, NOT yet published
 
-Python package only - npm and the bundler image are untouched, so nothing here
-has shipped to a registry.
+Version stamps are bumped and the tarball is correct; the npm publish itself
+still has to be run. Until it is, the live registry page for 0.1.1 keeps
+serving the stale README.
+
+- The npm README no longer claims the Python kit is on PyPI - it is not, and
+  0.1.1 shipped that claim to the registry page where a commit could not reach
+  it. `NOTICE` now ships in the tarball too.
 
 - The five Cloud behaviours the platform plan lists as drift ports: anti-stall
   ("act, don't narrate"), the inlined-dataset write guard, the Tailwind font

@@ -1,6 +1,6 @@
 {
   "name": "@speculosai/spec_harness",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Embeddable AI app-building workspace: a chat panel beside a live, sandboxed preview. The React workspace, the sandboxed preview host, the wire-protocol types, and the MCP connector, in one package.",
   "license": "Apache-2.0",
   "repository": {
