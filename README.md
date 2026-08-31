@@ -83,6 +83,13 @@ One install covers the whole frontend. The rest of it hangs off subpath entry po
 
 A single router. Mount it on an existing FastAPI application, or run it standalone beside Flask, Rails, or whatever else you use.
 
+The PyPI publish is still pending, so install it from the repository - a name
+that 404s helps nobody:
+
+```bash
+pip install "git+https://github.com/speculosai/spec_harness#subdirectory=py/speculos_harness"
+```
+
 ```python
 import os
 from speculos_harness import HarnessAgent
