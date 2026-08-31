@@ -7,6 +7,8 @@ FastAPI app with every protocol route registered.
 
 from __future__ import annotations
 
+import importlib.metadata
+
 import pytest
 
 MODEL = "anthropic/claude-fable-5"
@@ -34,7 +36,11 @@ def test_package_imports_public_api() -> None:
     ):
         assert hasattr(sh, name), f"missing public export: {name}"
 
-    assert sh.__version__ == "0.1.1"
+    # Checked against the packaging metadata rather than a literal: a hardcoded
+    # version turns every release into a test edit, and it fails for the one
+    # reason that is never a bug. Real drift between __init__, pyproject and
+    # package.json is what CI's version-drift step is for.
+    assert sh.__version__ == importlib.metadata.version("speculos-harness")
 
 
 def test_principal_and_auth_denied_are_usable() -> None:
