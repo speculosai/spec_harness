@@ -2,10 +2,14 @@
 
 The three artifacts (npm `@speculosai/spec_harness`, pip `speculos-harness`,
 image `speculosai/harness-bundler`) share one version number, and CI fails on
-drift between them. npm and the Python kit are at 0.1.6, the image at 0.1.2; **the PyPI publish is
+drift between them. npm, the Python kit and the image are all at 0.1.6; **the PyPI publish is
 still pending**, so the Python kit installs from this repository.
 
 ## 0.1.6 - 2026-09-05
+
+The bundler image `speculosai/harness-bundler` is published as 0.1.6 and
+`latest` (multi-arch, linux/amd64 + linux/arm64); its contents are those of
+0.1.2 plus the pm2 entrypoint `start.sh`.
 
 - The model picker shows only when the server offers two or more models. With
   one model it offered "Server default" and that same model, which was not a
