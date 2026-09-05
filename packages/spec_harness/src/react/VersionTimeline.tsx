@@ -158,25 +158,28 @@ export function VersionTimeline(props: VersionTimelineProps): ReactElement {
                     {relativeTime(at)}
                   </span>
                 </div>
+                {/* Two icon buttons on the row itself: the rail is narrow, and
+                    labelled buttons wrapped onto lines of their own. */}
                 <div className="harness-version-actions">
                   <button
                     type="button"
-                    className="harness-btn harness-btn-soft"
+                    className="harness-icon-btn"
                     title={t('versions.changesTitle')}
+                    aria-label={t('versions.changes')}
                     onClick={() => setViewing(snapshot)}
                   >
-                    <DiffIcon size={12} />
-                    {t('versions.changes')}
+                    <DiffIcon size={14} />
                   </button>
                   {canEdit && (
                     <button
                       type="button"
-                      className="harness-btn harness-btn-soft"
+                      className="harness-icon-btn"
+                      title={t('versions.restore')}
+                      aria-label={pending === snapshot.id ? t('versions.restoring') : t('versions.restore')}
                       disabled={pending !== null}
                       onClick={() => void restore(snapshot)}
                     >
-                      {pending === snapshot.id ? <SpinnerIcon size={12} /> : <RestoreIcon size={12} />}
-                      {pending === snapshot.id ? t('versions.restoring') : t('versions.restore')}
+                      {pending === snapshot.id ? <SpinnerIcon size={14} /> : <RestoreIcon size={14} />}
                     </button>
                   )}
                 </div>

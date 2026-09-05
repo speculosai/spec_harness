@@ -85,7 +85,9 @@ crash-to-fix guard - so you never wire those up yourself.
 | `filePanel` | `"explorer" \| "hidden"` | `"explorer"` | Whether the read-only file tree, per-turn diffs, and version timeline show. |
 | `onFirstPrompt` | `() => string \| undefined` | - | Seeds the first turn. The `?prompt=` deep-link convention: return a value to open the workspace mid-thought. |
 | `chatHeader` | `ReactNode` | - | Rendered at the top of the chat log: starter suggestions, a welcome. Inside it, `useHarness().bus.requestFill(projectId, text)` puts a suggestion in the composer without sending it, and `useAgentBusy(projectId)` says when a turn has started. |
-| `composerHeader` | `ReactNode` | - | Rendered inside the composer, above the text box and beside Send - the place for what the next turn has to hand, such as the data sources it may use. |
+| `composerHeader` | `ReactNode` | - | Rendered inside the composer, above the text box and beside Send - the place for what the next turn has to hand, such as the data sources it may use. The model picker, when the server offers models, joins this row. |
+| `toolbar` | `boolean` | `true` | Whether the workspace draws its own thin toolbar (brand + files toggle). Pass `false` when your chrome already has both, and drive the panel with `filesOpen`. |
+| `filesOpen` | `boolean` | - | Controlled file-panel state, for a host that renders its own toggle. |
 
 The `?prompt=` deep link is worth calling out - a URL like
 `/build?prompt=arrears+dashboard` launches a user straight into a build:

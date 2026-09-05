@@ -260,6 +260,28 @@ export function ChatPane(props: ChatPaneProps): ReactElement {
     [ingest],
   );
 
+  const modelPicker = (
+    <>
+      <label className="harness-muted" htmlFor={`harness-model-${projectId}`}>
+        {t('composer.model')}
+      </label>
+      <select
+        id={`harness-model-${projectId}`}
+        className="harness-select"
+        value={model}
+        disabled={chat.busy}
+        onChange={(event) => setModel(event.target.value)}
+      >
+        <option value="">{t('composer.modelAuto')}</option>
+        {models.map((id) => (
+          <option key={id} value={id}>
+            {id}
+          </option>
+        ))}
+      </select>
+    </>
+  );
+
   const lastItem = chat.items[chat.items.length - 1];
   const accept = useMemo(
     () => [acceptsImages ? 'image/*' : '', acceptsCsv ? '.csv,text/csv,application/vnd.ms-excel' : '']
@@ -357,7 +379,15 @@ export function ChatPane(props: ChatPaneProps): ReactElement {
           onDragOver={(event) => event.preventDefault()}
           onDrop={onDrop}
         >
-          {composerHeader ? <div className="harness-composer-header">{composerHeader}</div> : null}
+          {composerHeader ? (
+            // The host's row and the model picker share one line: the picker
+            // used to sit on a row of its own under the text box, which cost
+            // the chat a line for one control.
+            <div className="harness-composer-header">
+              <div className="harness-composer-header-slot">{composerHeader}</div>
+              {models.length > 0 && modelPicker}
+            </div>
+          ) : null}
           {attachments.length > 0 && (
             <div className="harness-attachments">
               {attachments.map((attachment, index) => (
@@ -429,26 +459,8 @@ export function ChatPane(props: ChatPaneProps): ReactElement {
             )}
           </div>
 
-          {models.length > 0 && (
-            <div className="harness-composer-meta">
-              <label className="harness-muted" htmlFor={`harness-model-${projectId}`}>
-                {t('composer.model')}
-              </label>
-              <select
-                id={`harness-model-${projectId}`}
-                className="harness-select"
-                value={model}
-                disabled={chat.busy}
-                onChange={(event) => setModel(event.target.value)}
-              >
-                <option value="">{t('composer.modelAuto')}</option>
-                {models.map((id) => (
-                  <option key={id} value={id}>
-                    {id}
-                  </option>
-                ))}
-              </select>
-            </div>
+          {models.length > 0 && !composerHeader && (
+            <div className="harness-composer-meta">{modelPicker}</div>
           )}
         </form>
       )}

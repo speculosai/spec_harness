@@ -41,6 +41,14 @@ export interface BuilderProps {
   chatHeader?: ReactNode;
   /** Rendered inside the composer above the text box - the data sources for the next turn, say. */
   composerHeader?: ReactNode;
+  /**
+   * Whether the workspace draws its own thin toolbar (brand + files toggle).
+   * A host whose chrome already carries both passes `false` and controls the
+   * file panel with `filesOpen`. Defaults to `true`.
+   */
+  toolbar?: boolean;
+  /** Controlled file-panel state, for a host that renders its own toggle. */
+  filesOpen?: boolean;
 }
 
 const MIN_FRACTION = 0.2;
@@ -68,14 +76,19 @@ function readFraction(projectId: string): number {
  * crash-to-auto-fix guard - so the panes stay in sync.
  */
 export function Builder(props: BuilderProps): ReactElement {
-  const { projectId, layout = 'preview-left', filePanel = 'explorer', onFirstPrompt, chatHeader, composerHeader } = props;
+  const {
+    projectId, layout = 'preview-left', filePanel = 'explorer', onFirstPrompt,
+    chatHeader, composerHeader, toolbar = true, filesOpen,
+  } = props;
   const { t, brand, auth, protocolMismatch } = useHarness();
   const canEdit = auth.canEdit !== false;
 
   // Read once, on mount: a `?prompt=` deep link seeds the composer so the user lands
   // one click away from a build, rather than sending on their behalf.
   const [seed] = useState<string>(() => onFirstPrompt?.() ?? '');
-  const [showFiles, setShowFiles] = useState(filePanel === 'explorer');
+  const [ownShowFiles, setShowFiles] = useState(filePanel === 'explorer');
+  // Controlled when the host says so, otherwise the toolbar's own toggle.
+  const showFiles = filesOpen ?? ownShowFiles;
   const [fraction, setFraction] = useState(() => readFraction(projectId));
 
   const splitRef = useRef<HTMLDivElement | null>(null);
@@ -152,6 +165,7 @@ export function Builder(props: BuilderProps): ReactElement {
 
   return (
     <div className="harness-root harness-builder">
+      {toolbar && (
       <header className="harness-topbar">
         <span className="harness-brand">
           {brand?.Logo ?? <HarnessMark size={18} />}
@@ -170,6 +184,7 @@ export function Builder(props: BuilderProps): ReactElement {
           </button>
         )}
       </header>
+      )}
 
       {protocolMismatch !== null && (
         <div className="harness-banner">

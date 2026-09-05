@@ -2,8 +2,18 @@
 
 The three artifacts (npm `@speculosai/spec_harness`, pip `speculos-harness`,
 image `speculosai/harness-bundler`) share one version number, and CI fails on
-drift between them. npm and the Python kit are at 0.1.4, the image at 0.1.2; **the PyPI publish is
+drift between them. npm and the Python kit are at 0.1.5, the image at 0.1.2; **the PyPI publish is
 still pending**, so the Python kit installs from this repository.
+
+## 0.1.5 - 2026-09-05
+
+- The version timeline's Changes and Restore are icon buttons on the row
+  itself; labelled buttons wrapped onto lines of their own in the rail.
+- When a host provides `composerHeader`, the model picker joins that row
+  instead of taking a line of its own under the text box.
+- `<Builder toolbar={false}>` drops the workspace's own toolbar for a host
+  whose chrome already carries the brand and a files toggle; `filesOpen`
+  controls the file panel from outside.
 
 ## 0.1.4 - 2026-09-05
 

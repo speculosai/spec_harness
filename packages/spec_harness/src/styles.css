@@ -959,14 +959,21 @@
 
 .harness-composer-header {
   display: flex;
-  flex-direction: column;
+  align-items: center;
   gap: var(--harness-space-2);
+  font-size: var(--harness-font-size-xs);
+}
+
+.harness-composer-header-slot {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .harness-version-actions {
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--harness-space-1);
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 2px;
 }
 
 /* ------------------------------------------------------------------------- *
