@@ -84,6 +84,8 @@ crash-to-fix guard - so you never wire those up yourself.
 | `layout` | `"preview-left" \| "chat-left"` | `"preview-left"` | Which side the preview sits on. Pane order is a prop, not a fork. |
 | `filePanel` | `"explorer" \| "hidden"` | `"explorer"` | Whether the read-only file tree, per-turn diffs, and version timeline show. |
 | `onFirstPrompt` | `() => string \| undefined` | - | Seeds the first turn. The `?prompt=` deep-link convention: return a value to open the workspace mid-thought. |
+| `chatHeader` | `ReactNode` | - | Rendered at the top of the chat log: starter suggestions, a welcome. Pair it with `bus.requestFill(projectId, text)` to put a suggestion in the composer without sending it. |
+| `composerHeader` | `ReactNode` | - | Rendered inside the composer, above the text box and beside Send - the place for what the next turn has to hand, such as the data sources it may use. |
 
 The `?prompt=` deep link is worth calling out - a URL like
 `/build?prompt=arrears+dashboard` launches a user straight into a build:
@@ -105,8 +107,9 @@ and they keep talking to each other through the provider.
 |---|---|
 | `<ChatPane>` | The chat side: the message log with legible tool cards, plan-mode choice chips, the model picker, and the composer with image/CSV attachments. |
 | `<PreviewPane>` | The preview side: the null-origin sandboxed iframe, the postMessage bridge, the readable fallback, and the once-per-build auto-fix. |
-| `<FileExplorer>` | The read-only file tree with per-turn diffs. The trust view - "what did the agent actually change?" - not an editor. |
-| `<VersionTimeline>` | Every turn as a restorable version (the last ~30), with undo. |
+| `<FileExplorer>` | The read-only file tree. Selecting a file opens it full size, with a **Changes** tab that diffs it against any earlier version. The trust view - "what did the agent actually change?" - not an editor. |
+| `<VersionTimeline>` | Every turn as a restorable version (the last ~30), with undo. Each version's **Changes** shows exactly which files differ from the app as it is now, so a restore is never a guess. |
+| `<FileViewer>`, `<VersionChanges>`, `<DiffView>` | The overlays the two panes open, exported so a host can open a file or a version's changes from its own chrome. |
 
 ```tsx
 <HarnessProvider baseUrl="/api/builder" auth={{ getHeaders }}>

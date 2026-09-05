@@ -59,7 +59,15 @@ export { useHarnessPreview } from './useHarnessPreview';
 export type { BundleFn, HarnessPreview, PreviewFailure, UseHarnessPreviewOptions } from './useHarnessPreview';
 
 export { useHarnessFiles } from './useHarnessFiles';
-export type { FileTreeNode, HarnessFiles, UseHarnessFilesOptions } from './useHarnessFiles';
+export type { FileTreeNode, HarnessFiles, SnapshotDetail, UseHarnessFilesOptions } from './useHarnessFiles';
+
+// What changed: the diff renderer and the two overlays the explorer and the
+// timeline open, exported so a host can open a file or a version's changes from
+// its own chrome.
+export { DiffView, FileViewer, HarnessOverlay, SourceView, VersionChanges, changesBetween } from './Changes';
+export type { FileChange } from './Changes';
+export { diffHunks, diffStats, lineDiff } from './diff';
+export type { DiffHunk, DiffLine } from './diff';
 
 /* ------------------------------------------------------------------------- *
  * Item model, plan choices, and the label defaults

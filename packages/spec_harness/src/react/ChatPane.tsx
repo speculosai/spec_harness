@@ -31,8 +31,14 @@ const MAX_CSV_BYTES = 4 * 1024 * 1024;
 export interface ChatPaneProps {
   /** The project the conversation belongs to. */
   projectId: string;
-  /** Optional slot rendered above the composer (starter suggestions, connector chips). */
+  /** Optional slot rendered at the top of the message log (starter suggestions). */
   header?: ReactNode;
+  /**
+   * Optional slot rendered inside the composer, above the text box - the place for
+   * what the next turn has to hand: the data sources it may use, a mode toggle.
+   * Sits with the Send button, so it reads as part of what is being sent.
+   */
+  composerHeader?: ReactNode;
   /**
    * Seed the composer on first mount - the `?prompt=` deep-link convention. The text
    * is prefilled, not sent, so the user lands one click away from a build.
@@ -75,7 +81,7 @@ function countRows(text: string): number {
  * through {@link useHarnessChat}.
  */
 export function ChatPane(props: ChatPaneProps): ReactElement {
-  const { projectId, header, initialInput } = props;
+  const { projectId, header, composerHeader, initialInput } = props;
   const { t, auth, capabilities, bus } = useHarness();
   const chat = useHarnessChat({ projectId });
   const canEdit = auth.canEdit !== false;
@@ -151,6 +157,19 @@ export function ChatPane(props: ChatPaneProps): ReactElement {
       bus.onSendRequest(projectId, (text) => {
         if (!canEdit || chatRef.current.busy) return false;
         chatRef.current.send(text, { planMode: false });
+        return true;
+      }),
+    [bus, projectId, canEdit],
+  );
+
+  // A host's starter suggestion lands in the composer, editable, with the caret
+  // ready - not sent on the person's behalf.
+  useEffect(
+    () =>
+      bus.onFillRequest(projectId, (text) => {
+        if (!canEdit || chatRef.current.busy) return false;
+        setInput(text);
+        textareaRef.current?.focus();
         return true;
       }),
     [bus, projectId, canEdit],
@@ -338,6 +357,7 @@ export function ChatPane(props: ChatPaneProps): ReactElement {
           onDragOver={(event) => event.preventDefault()}
           onDrop={onDrop}
         >
+          {composerHeader ? <div className="harness-composer-header">{composerHeader}</div> : null}
           {attachments.length > 0 && (
             <div className="harness-attachments">
               {attachments.map((attachment, index) => (

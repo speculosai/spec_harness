@@ -180,6 +180,13 @@ export interface WorkspaceBus {
   requestSend: (projectId: string, text: string) => boolean;
   /** Register a chat as the taker of {@link WorkspaceBus.requestSend}. */
   onSendRequest: (projectId: string, handler: (text: string) => boolean) => () => void;
+  /**
+   * Put text in a mounted chat's composer without sending it - a starter
+   * suggestion the person can still edit. Returns whether anything took it.
+   */
+  requestFill: (projectId: string, text: string) => boolean;
+  /** Register a chat as the taker of {@link WorkspaceBus.requestFill}. */
+  onFillRequest: (projectId: string, handler: (text: string) => boolean) => () => void;
 }
 
 function createBus(): WorkspaceBus {
@@ -187,6 +194,7 @@ function createBus(): WorkspaceBus {
   const busyFlags = new Map<string, boolean>();
   const historyEpochs = new Map<string, number>();
   const senders = new Map<string, Set<(text: string) => boolean>>();
+  const fillers = new Map<string, Set<(text: string) => boolean>>();
   const listeners = new Set<() => void>();
   let seq = 0;
 
@@ -230,6 +238,20 @@ function createBus(): WorkspaceBus {
       const set = senders.get(projectId) ?? new Set();
       set.add(handler);
       senders.set(projectId, set);
+      return () => {
+        set.delete(handler);
+      };
+    },
+    requestFill: (projectId, text) => {
+      for (const handler of fillers.get(projectId) ?? []) {
+        if (handler(text)) return true;
+      }
+      return false;
+    },
+    onFillRequest: (projectId, handler) => {
+      const set = fillers.get(projectId) ?? new Set();
+      set.add(handler);
+      fillers.set(projectId, set);
       return () => {
         set.delete(handler);
       };

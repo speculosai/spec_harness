@@ -781,6 +781,28 @@ class HarnessAgent:
             snapshots = await self.store.list_snapshots(project_id)
             return _json([dict(s) for s in snapshots])
 
+        @router.get("/projects/{project_id}/snapshots/{snapshot_id}")
+        async def get_snapshot(project_id: str, snapshot_id: str, request: Request) -> Any:  # noqa: ANN401
+            """One snapshot with its ``files`` and ``messages`` inlined.
+
+            What the version timeline diffs against: "what did this turn
+            change?" and "what would restoring this put back?" are both
+            answered by comparing a snapshot's files with the current ones,
+            and the list endpoint deliberately carries no files.
+            """
+            principal = await self._principal(request)
+            if isinstance(principal, JSONResponse):
+                return principal
+            project = await self._load_project(project_id, principal)
+            if isinstance(project, JSONResponse):
+                return project
+            if not self._has_snapshots():
+                return _error("this store does not keep snapshots", 404)
+            detail = await self.store.get_snapshot(project_id, snapshot_id)
+            if detail is None:
+                return _error("snapshot not found", 404)
+            return _json(dict(detail))
+
         @router.post("/projects/{project_id}/rollback")
         async def rollback(project_id: str, request: Request) -> Any:  # noqa: ANN401
             """Restore a snapshot and return ``{ok, messageIndex, undoSnapshotId}``.

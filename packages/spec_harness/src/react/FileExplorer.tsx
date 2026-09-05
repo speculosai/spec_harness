@@ -9,8 +9,9 @@
 import { useCallback, useState } from 'react';
 import type { ReactElement } from 'react';
 
+import { FileViewer } from './Changes';
 import { useHarness } from './context';
-import { ChevronIcon, CloseIcon, FileIcon, FolderIcon } from './icons';
+import { ChevronIcon, FileIcon, FolderIcon } from './icons';
 import { useHarnessFiles } from './useHarnessFiles';
 import type { FileTreeNode } from './useHarnessFiles';
 import type { Translate } from './strings';
@@ -36,17 +37,17 @@ export function FileExplorer(props: FileExplorerProps): ReactElement {
   // them behind a click would only make the tree feel bigger than it is.
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [selected, setSelected] = useState<string | null>(null);
-  const [source, setSource] = useState('');
 
+  // Selecting a file opens it full size, with its source and what changed in it.
+  // It used to render the source inside this 260px rail, which was unreadable.
   const select = useCallback(
     (path: string) => {
       setSelected(path);
-      setSource('');
       onSelect?.(path);
-      void files.read(path).then(setSource);
     },
-    [files, onSelect],
+    [onSelect],
   );
+  const close = useCallback(() => setSelected(null), []);
 
   const toggle = useCallback((path: string) => {
     setCollapsed((current) => ({ ...current, [path]: !current[path] }));
@@ -105,25 +106,7 @@ export function FileExplorer(props: FileExplorerProps): ReactElement {
         )}
       </div>
 
-      {selected && (
-        <div className="harness-file-view">
-          <div className="harness-file-view-head">
-            <span className="harness-mono harness-file-view-path">{selected}</span>
-            <span className="harness-muted">{t('files.bytes', { bytes: source.length })}</span>
-            <button
-              type="button"
-              className="harness-icon-btn"
-              aria-label={t('files.close')}
-              onClick={() => setSelected(null)}
-            >
-              <CloseIcon size={12} />
-            </button>
-          </div>
-          <pre className="harness-code-block harness-file-source">
-            <code>{source}</code>
-          </pre>
-        </div>
-      )}
+      {selected && <FileViewer path={selected} files={files} onClose={close} />}
 
       <p className="harness-panel-note">{t('files.note')}</p>
     </div>

@@ -43,7 +43,7 @@ client code.
 | `attachments` | string[] | Which attachment kinds the server accepts (`"image"`, `"csv"`). The client only offers these. |
 | `models` | string[] | The models the in-chat picker may offer. Empty or absent → hide the picker and use the server default. |
 | `connectors` | string[] | Which connector kinds are mounted (e.g. `"postgres"`, `"mcp"`). The client's preview shim degrades any unlisted connector to a never-throw stub. |
-| `snapshots` | boolean | Whether the mounted store keeps pre-turn snapshots. When `false` the client hides the version timeline and does not call `/projects/{id}/snapshots`. Absent → assume the endpoint may exist and let a 404 hide the timeline. |
+| `snapshots` | boolean | Whether the mounted store keeps pre-turn snapshots. When `false` the client hides the version timeline and does not call `/projects/{id}/snapshots` or `/projects/{id}/snapshots/{snapshotId}` (one snapshot with its `files` and `messages`, which the client diffs against the current files). Absent → assume the endpoints may exist and let a 404 hide the timeline. |
 
 An optional `routing` flag advertises that the server picks the model per task.
 It is a forward-compatible addition; a client that doesn't know it ignores it,

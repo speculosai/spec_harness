@@ -118,6 +118,14 @@ export const DEFAULT_STRINGS: Record<string, string> = {
   'files.changedTurn': 'Changed in turn {{turn}}',
   'files.close': 'Close',
   'files.bytes': '{{bytes}} bytes',
+  'files.sizeLine': '{{lines}} lines · {{bytes}} bytes',
+  'files.tabSource': 'File',
+  'files.tabChanges': 'Changes',
+  'files.compareWith': 'Compared with',
+  'files.noChanges': 'No changes between these two.',
+  'files.added': 'Added',
+  'files.removed': 'Removed',
+  'files.modified': 'Changed',
 
   // Version timeline
   'versions.title': 'Versions',
@@ -130,6 +138,10 @@ export const DEFAULT_STRINGS: Record<string, string> = {
   'versions.turn': 'Turn {{turn}}',
   'versions.undo': 'Undo',
   'versions.undoKind': 'Undo point',
+  'versions.changes': 'Changes',
+  'versions.changesTitle': 'What differs between this version and the app as it is now',
+  'versions.comparedToNow': 'compared with the app as it is now',
+  'versions.noChanges': 'This version is identical to the app as it is now.',
 };
 
 /** Replace every `{{name}}` in `template` with the matching var. */

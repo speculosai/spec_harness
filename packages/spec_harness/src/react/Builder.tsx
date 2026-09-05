@@ -11,7 +11,7 @@
  */
 
 import { useCallback, useRef, useState } from 'react';
-import type { PointerEvent as ReactPointerEvent, ReactElement } from 'react';
+import type { PointerEvent as ReactPointerEvent, ReactElement, ReactNode } from 'react';
 import { PROTOCOL_VERSION } from '../protocol';
 
 import { ChatPane } from './ChatPane';
@@ -37,6 +37,10 @@ export interface BuilderProps {
   filePanel?: BuilderFilePanel;
   /** Seed the first turn (e.g. from a `?prompt=` deep link). */
   onFirstPrompt?: () => string | undefined;
+  /** Rendered at the top of the chat log - starter suggestions, a welcome. */
+  chatHeader?: ReactNode;
+  /** Rendered inside the composer above the text box - the data sources for the next turn, say. */
+  composerHeader?: ReactNode;
 }
 
 const MIN_FRACTION = 0.2;
@@ -64,7 +68,7 @@ function readFraction(projectId: string): number {
  * crash-to-auto-fix guard - so the panes stay in sync.
  */
 export function Builder(props: BuilderProps): ReactElement {
-  const { projectId, layout = 'preview-left', filePanel = 'explorer', onFirstPrompt } = props;
+  const { projectId, layout = 'preview-left', filePanel = 'explorer', onFirstPrompt, chatHeader, composerHeader } = props;
   const { t, brand, auth, protocolMismatch } = useHarness();
   const canEdit = auth.canEdit !== false;
 
@@ -117,7 +121,7 @@ export function Builder(props: BuilderProps): ReactElement {
 
   const previewFirst = layout === 'preview-left';
   const preview = <PreviewPane projectId={projectId} />;
-  const chat = <ChatPane projectId={projectId} initialInput={seed} />;
+  const chat = <ChatPane projectId={projectId} initialInput={seed} header={chatHeader} composerHeader={composerHeader} />;
 
   const rail =
     filePanel === 'explorer' && showFiles ? (

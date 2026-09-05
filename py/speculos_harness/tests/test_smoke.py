@@ -99,6 +99,7 @@ def test_router_mounts_and_exposes_routes() -> None:
         "/projects",
         "/projects/{project_id}",
         "/projects/{project_id}/snapshots",
+        "/projects/{project_id}/snapshots/{snapshot_id}",
         "/projects/{project_id}/rollback",
         "/capabilities",
         "/connectors/{kind}",

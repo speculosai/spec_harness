@@ -214,7 +214,22 @@ export default function App() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 p-8">
       <div className="max-w-md text-center">
-        <div className="mx-auto mb-6 h-12 w-12 rounded-2xl bg-slate-900" />
+        <svg
+          width="48"
+          height="48"
+          viewBox="0 0 24 24"
+          fill="none"
+          aria-hidden="true"
+          className="mx-auto mb-6 text-slate-400"
+        >
+          <rect x="2" y="2" width="20" height="20" rx="5" fill="currentColor" opacity="0.18" />
+          <path
+            d="M8 15.5 12 6l4 9.5M9.6 12.6h4.8"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+        </svg>
         <h1 className="text-xl font-semibold text-slate-900">
           Your app will render here
         </h1>

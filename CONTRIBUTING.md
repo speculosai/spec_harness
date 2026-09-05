@@ -40,6 +40,13 @@ rules. It is worth running after any change to the iframe host:
 bun run packages/spec_harness/src/preview.self-check.ts
 ```
 
+The client's pure helpers (the line diff behind the file viewer and the
+version timeline) have unit tests, run with bun:
+
+```bash
+bun test ./packages/spec_harness/src
+```
+
 A change to the wire protocol needs a matching change on both sides: the spec in [`spec/`](./spec), the TypeScript types in [`packages/spec_harness/src/protocol.ts`](./packages/spec_harness/src/protocol.ts), and the Python protocols in the agent kit. A PR that moves one without the others will get sent back.
 
 ## How to file an issue

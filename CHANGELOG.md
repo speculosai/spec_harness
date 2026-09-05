@@ -2,8 +2,33 @@
 
 The three artifacts (npm `@speculosai/spec_harness`, pip `speculos-harness`,
 image `speculosai/harness-bundler`) share one version number, and CI fails on
-drift between them. npm and the image are at 0.1.2; **the PyPI publish is still
-pending**, so the Python kit installs from this repository.
+drift between them. npm and the Python kit are at 0.1.3, the image at 0.1.2; **the PyPI publish is
+still pending**, so the Python kit installs from this repository.
+
+## 0.1.3 - 2026-09-05
+
+npm and the Python kit move to 0.1.3; the bundler image is unchanged and stays
+at 0.1.2 (nothing in `packages/bundler` changed).
+
+- **A real file view.** Selecting a file in the explorer opens it full size over
+  the workspace - line numbers, the whole file - instead of a 260px scroll box
+  in the rail. Its **Changes** tab diffs the file against any earlier version.
+- **Diffs on the timeline.** Every version has a **Changes** button showing
+  exactly which files differ from the app as it is now, with a unified diff per
+  file. After a restore, the undo point shows what the restore undid.
+- **`GET /projects/{id}/snapshots/{snapshotId}`** on the reference router: one
+  snapshot with its `files` and `messages`. The list endpoint still carries
+  none; the client fetches a snapshot only when it is about to diff it.
+- **Two slots on `<Builder>`:** `chatHeader` (top of the log) and
+  `composerHeader` (inside the composer, above the text box, beside Send), and
+  `bus.requestFill(projectId, text)` to put a suggestion in the composer
+  without sending it. A host can now show the data sources a turn will use
+  where the turn is written, and offer starters on an empty project.
+- The starter placeholder's mark is a light outline rather than a solid dark
+  square, which read as a broken image. The first-build note now keys on the
+  placeholder's heading, so a host that swaps in its own logo still gets it.
+- `lineDiff`, `diffHunks`, `diffStats`, `changesBetween` and the overlay
+  components are exported for hosts that want them elsewhere.
 
 ## 0.1.2 - 2026-08-31
 

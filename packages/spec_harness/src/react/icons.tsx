@@ -155,6 +155,26 @@ export function PanelIcon({ size = 14, className }: IconProps): ReactElement {
   );
 }
 
+export function DiffIcon({ size = 14, className }: IconProps): ReactElement {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d="M12 3v18M5 9h14M5 15h14" />
+    </svg>
+  );
+}
+
 /** The default mark, used when a host supplies no `brand.Logo`. */
 export function HarnessMark({ size = 16, className }: IconProps): ReactElement {
   return (

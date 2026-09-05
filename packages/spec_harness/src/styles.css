@@ -905,37 +905,6 @@
   background: var(--harness-color-accent);
 }
 
-.harness-file-view {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  border-top: 1px solid var(--harness-color-border);
-}
-
-.harness-file-view-head {
-  display: flex;
-  align-items: center;
-  gap: var(--harness-space-2);
-  padding: var(--harness-space-2) var(--harness-space-3);
-  background: var(--harness-color-surface);
-  font-size: var(--harness-font-size-xs);
-}
-
-.harness-file-view-path {
-  flex: 1 1 auto;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.harness-file-source {
-  max-height: 320px;
-  margin: 0;
-  border: 0;
-  border-radius: 0;
-  overflow: auto;
-}
-
 .harness-undo-bar {
   display: flex;
   align-items: center;
@@ -987,6 +956,257 @@
 /* ------------------------------------------------------------------------- *
  * Narrow embeds
  * ------------------------------------------------------------------------- */
+
+.harness-composer-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--harness-space-2);
+}
+
+.harness-version-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--harness-space-1);
+}
+
+/* ------------------------------------------------------------------------- *
+ * Overlay: a file, or a version's changes, at full size
+ * ------------------------------------------------------------------------- */
+
+.harness-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--harness-space-4);
+  background: color-mix(in srgb, var(--harness-color-text) 45%, transparent);
+}
+
+.harness-overlay-card {
+  display: flex;
+  flex-direction: column;
+  width: min(1100px, 100%);
+  height: min(86vh, 100%);
+  overflow: hidden;
+  border: 1px solid var(--harness-color-border);
+  border-radius: var(--harness-radius-lg);
+  background: var(--harness-color-bg);
+  box-shadow: 0 24px 64px color-mix(in srgb, var(--harness-color-text) 30%, transparent);
+}
+
+.harness-overlay-head {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--harness-space-3);
+  padding: var(--harness-space-2) var(--harness-space-3);
+  border-bottom: 1px solid var(--harness-color-border);
+  background: var(--harness-color-surface);
+}
+
+.harness-overlay-title {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--harness-font-size-xs);
+}
+
+.harness-overlay-path {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: var(--harness-font-size-sm);
+  font-weight: 600;
+}
+
+.harness-overlay-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+
+.harness-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--harness-color-border);
+  border-radius: var(--harness-radius-sm);
+  background: var(--harness-color-bg);
+}
+
+.harness-tab {
+  padding: 3px 10px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--harness-color-text-muted);
+  font: inherit;
+  font-size: var(--harness-font-size-xs);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.harness-tab-on {
+  background: var(--harness-color-accent-soft);
+  color: var(--harness-color-text);
+}
+
+.harness-compare-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--harness-space-2);
+  padding: var(--harness-space-2) var(--harness-space-3);
+  border-bottom: 1px solid var(--harness-color-border);
+  font-size: var(--harness-font-size-xs);
+}
+
+/* Source and diffs share one grid: two number gutters, a sign, the text. */
+
+.harness-source,
+.harness-diff {
+  font-family: var(--harness-font-mono);
+  font-size: var(--harness-font-size-xs);
+  line-height: 1.55;
+}
+
+.harness-source-line,
+.harness-diff-line {
+  display: flex;
+  min-width: 100%;
+  white-space: pre;
+}
+
+.harness-source-line:hover,
+.harness-diff-line:hover {
+  background: var(--harness-color-hover);
+}
+
+.harness-diff-no {
+  flex: 0 0 3.5em;
+  padding-right: var(--harness-space-2);
+  color: var(--harness-color-text-muted);
+  text-align: right;
+  user-select: none;
+  opacity: 0.8;
+}
+
+.harness-diff-sign {
+  flex: 0 0 1.2em;
+  text-align: center;
+  user-select: none;
+}
+
+.harness-diff-text {
+  flex: 1 1 auto;
+  padding-right: var(--harness-space-3);
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.harness-source-line .harness-diff-no {
+  flex-basis: 3.5em;
+  margin-right: var(--harness-space-2);
+}
+
+.harness-diff-line-add {
+  background: color-mix(in srgb, #16a34a 14%, transparent);
+}
+
+.harness-diff-line-del {
+  background: var(--harness-color-danger-soft);
+}
+
+.harness-diff-hunk {
+  border-bottom: 1px solid var(--harness-color-border);
+}
+
+.harness-diff-hunk-head {
+  padding: 2px var(--harness-space-3);
+  background: var(--harness-color-surface);
+  color: var(--harness-color-text-muted);
+  user-select: none;
+}
+
+.harness-diff-stats {
+  display: inline-flex;
+  gap: var(--harness-space-2);
+  padding: var(--harness-space-1) var(--harness-space-3);
+  font-family: var(--harness-font-mono);
+  font-size: var(--harness-font-size-xs);
+}
+
+.harness-diff-added {
+  color: #16a34a;
+}
+
+.harness-diff-removed {
+  color: var(--harness-color-danger);
+}
+
+.harness-change-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.harness-change {
+  border-bottom: 1px solid var(--harness-color-border);
+}
+
+.harness-change-head {
+  display: flex;
+  align-items: center;
+  gap: var(--harness-space-2);
+  width: 100%;
+  padding: var(--harness-space-2) var(--harness-space-3);
+  border: 0;
+  background: var(--harness-color-surface);
+  color: var(--harness-color-text);
+  font: inherit;
+  font-size: var(--harness-font-size-xs);
+  text-align: left;
+  cursor: pointer;
+}
+
+.harness-change-head:hover {
+  background: var(--harness-color-hover);
+}
+
+.harness-change-path {
+  flex: 1 1 auto;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.harness-change-status {
+  flex: 0 0 auto;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.harness-change-status-added {
+  background: color-mix(in srgb, #16a34a 16%, transparent);
+  color: #15803d;
+}
+
+.harness-change-status-removed {
+  background: var(--harness-color-danger-soft);
+  color: var(--harness-color-danger);
+}
+
+.harness-change-status-modified {
+  background: var(--harness-color-accent-soft);
+  color: var(--harness-color-accent);
+}
+
 
 @media (max-width: 720px) {
   .harness-panes {

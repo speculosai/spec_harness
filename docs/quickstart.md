@@ -151,7 +151,8 @@ app.include_router(agent.router, prefix="/api/builder")
 ```
 
 The router mounts `/chat` (SSE), `/bundle/{id}`, `/projects` (with
-`/projects/{id}/snapshots` and `/projects/{id}/rollback`), `/capabilities`, and
+`/projects/{id}/snapshots`, `/projects/{id}/snapshots/{snapshotId}` and
+`/projects/{id}/rollback`), `/capabilities`, and
 `/connectors/{kind}` under your prefix.
 
 ### 4. Run the build service

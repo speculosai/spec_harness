@@ -60,6 +60,17 @@ export interface HarnessFiles {
   undoRestore: () => Promise<void>;
   /** Forget the undo point. */
   dismissUndo: () => void;
+  /**
+   * A version with its files, for diffs. Cached per id: a snapshot never changes
+   * once taken, so the second look at it costs nothing.
+   */
+  snapshot: (snapshotId: string) => Promise<SnapshotDetail | null>;
+}
+
+/** A version with the files (and messages) it captured. */
+export interface SnapshotDetail extends Snapshot {
+  files: FileMap;
+  messages?: ChatMessage[];
 }
 
 /** Build the nested tree a file map implies. Directories sort first, then by name. */
@@ -289,6 +300,26 @@ export function useHarnessFiles(opts: UseHarnessFilesOptions): HarnessFiles {
   const refresh = useCallback(() => setNonce((n) => n + 1), []);
   const dismissUndo = useCallback(() => setUndo(null), []);
 
+  const snapshotCache = useRef<Map<string, Promise<SnapshotDetail | null>>>(new Map());
+  const snapshot = useCallback(
+    (snapshotId: string): Promise<SnapshotDetail | null> => {
+      const key = `${projectId}:${snapshotId}`;
+      const cached = snapshotCache.current.get(key);
+      if (cached) return cached;
+      const pending = requestJson<SnapshotDetail>(
+        `/projects/${encodeURIComponent(projectId)}/snapshots/${encodeURIComponent(snapshotId)}`,
+      ).catch((err: unknown) => {
+        // Only a successful read is worth remembering; a failure may be transient.
+        snapshotCache.current.delete(key);
+        if (err instanceof HarnessHttpError && err.status === 404) return null;
+        throw err;
+      });
+      snapshotCache.current.set(key, pending);
+      return pending;
+    },
+    [projectId, requestJson],
+  );
+
   return useMemo(
     () => ({
       tree,
@@ -305,6 +336,7 @@ export function useHarnessFiles(opts: UseHarnessFilesOptions): HarnessFiles {
       undo,
       undoRestore,
       dismissUndo,
+      snapshot,
     }),
     [
       tree,
@@ -321,6 +353,7 @@ export function useHarnessFiles(opts: UseHarnessFilesOptions): HarnessFiles {
       undo,
       undoRestore,
       dismissUndo,
+      snapshot,
     ],
   );
 }

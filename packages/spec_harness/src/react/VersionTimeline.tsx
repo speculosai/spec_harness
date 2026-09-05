@@ -10,8 +10,9 @@ import { useCallback, useMemo, useState } from 'react';
 import type { ReactElement } from 'react';
 import type { Snapshot } from '../protocol';
 
+import { VersionChanges } from './Changes';
 import { useHarness } from './context';
-import { CloseIcon, RestoreIcon, SpinnerIcon } from './icons';
+import { CloseIcon, DiffIcon, RestoreIcon, SpinnerIcon } from './icons';
 import { useHarnessFiles } from './useHarnessFiles';
 
 /** Props for {@link VersionTimeline}. */
@@ -65,6 +66,8 @@ export function VersionTimeline(props: VersionTimelineProps): ReactElement {
   const files = useHarnessFiles({ projectId });
   const [pending, setPending] = useState<string | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
+  // The version whose changes are open full size, if any.
+  const [viewing, setViewing] = useState<Snapshot | null>(null);
   // A viewer sees the history but cannot rewrite the project. The real boundary is
   // the server's `Principal.can_edit`; this only stops offering a button that would
   // come back 403.
@@ -155,22 +158,35 @@ export function VersionTimeline(props: VersionTimelineProps): ReactElement {
                     {relativeTime(at)}
                   </span>
                 </div>
-                {canEdit && (
+                <div className="harness-version-actions">
                   <button
                     type="button"
                     className="harness-btn harness-btn-soft"
-                    disabled={pending !== null}
-                    onClick={() => void restore(snapshot)}
+                    title={t('versions.changesTitle')}
+                    onClick={() => setViewing(snapshot)}
                   >
-                    {pending === snapshot.id ? <SpinnerIcon size={12} /> : <RestoreIcon size={12} />}
-                    {pending === snapshot.id ? t('versions.restoring') : t('versions.restore')}
+                    <DiffIcon size={12} />
+                    {t('versions.changes')}
                   </button>
-                )}
+                  {canEdit && (
+                    <button
+                      type="button"
+                      className="harness-btn harness-btn-soft"
+                      disabled={pending !== null}
+                      onClick={() => void restore(snapshot)}
+                    >
+                      {pending === snapshot.id ? <SpinnerIcon size={12} /> : <RestoreIcon size={12} />}
+                      {pending === snapshot.id ? t('versions.restoring') : t('versions.restore')}
+                    </button>
+                  )}
+                </div>
               </li>
             );
           })}
         </ol>
       )}
+
+      {viewing && <VersionChanges snapshot={viewing} files={files} onClose={() => setViewing(null)} />}
     </div>
   );
 }

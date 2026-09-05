@@ -317,10 +317,13 @@ _INLINE_BUDGET = 4000
 #: under TEMPLATE UI KIT - and it is excluded from the inline budget.
 _KIT_PATH = "/components/ui.tsx"
 
-#: A class string unique to the starter /App.tsx placeholder, used to tell a
-#: fresh scaffold from a real app so the first-build note fires only once. Must
-#: track the placeholder in speculos_harness.templates (_REACT_TS_APP).
-_SCAFFOLD_MARKER = "h-12 w-12 rounded-2xl bg-slate-900"
+#: The line unique to the starter /App.tsx placeholder, used to tell a fresh
+#: scaffold from a real app so the first-build note fires only once. It is the
+#: placeholder's heading rather than its mark, so a host that swaps in its own
+#: logo (the one thing a placeholder invites a host to change) still gets the
+#: first-build note. Must track the placeholder in speculos_harness.templates
+#: (_REACT_TS_APP).
+_SCAFFOLD_MARKER = "Your app will render here"
 
 
 #: The TEMPLATE UI KIT block. A/B-validated wording; keep its six load-bearing

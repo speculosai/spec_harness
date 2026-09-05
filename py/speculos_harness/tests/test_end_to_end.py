@@ -130,6 +130,17 @@ async def test_a_turn_writes_a_file_and_emits_the_protocol(client_and_llm):
         assert "Arrears by building" in files["/index.tsx"]
         snapshots = (await c.get(f"/api/builder/projects/{pid}/snapshots")).json()
         assert len(snapshots) >= 1
+        # The list carries no files; one snapshot does, so the timeline can diff
+        # "what did this turn change?" against the current files.
+        assert "files" not in snapshots[0]
+        detail = (
+            await c.get(f"/api/builder/projects/{pid}/snapshots/{snapshots[0]['id']}")
+        ).json()
+        assert detail["id"] == snapshots[0]["id"]
+        assert "/index.tsx" in detail["files"]
+        assert "Arrears by building" not in detail["files"]["/index.tsx"]
+        missing = await c.get(f"/api/builder/projects/{pid}/snapshots/nope")
+        assert missing.status_code == 404
 
 
 @pytest.mark.anyio

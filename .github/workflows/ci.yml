@@ -32,6 +32,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run selfcheck
+      - run: bun test ./packages/spec_harness/src
 
   py:
     runs-on: ubuntu-latest
