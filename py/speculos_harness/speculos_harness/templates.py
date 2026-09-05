@@ -271,15 +271,35 @@ TEMPLATE_IDS: tuple[str, ...] = tuple(TEMPLATES)
 DEFAULT_TEMPLATE = "react-ts"
 
 
+#: Ids other Speculos products use for the same starter. The Cloud calls the
+#: React + TypeScript starter ``vite-react-ts`` and every app migrated from it
+#: still carries that id, so resolving it here is deliberate rather than an
+#: accident of the unknown-name fallback below.
+TEMPLATE_ALIASES: dict[str, str] = {
+    "vite-react-ts": "react-ts",
+    "react": "react-ts",
+    "empty": "blank",
+}
+
+
+def canonical_template_id(name: Optional[str] = None) -> str:
+    """The id this deployment stores for ``name`` (aliases resolved)."""
+    key = name or DEFAULT_TEMPLATE
+    key = TEMPLATE_ALIASES.get(key, key)
+    return key if key in TEMPLATES else DEFAULT_TEMPLATE
+
+
 def get_template(name: Optional[str] = None) -> Template:
     """Return the starter template ``name``, or the default.
 
-    An unknown name falls back to :data:`DEFAULT_TEMPLATE` rather than raising:
-    a typo in a template id should give someone a working project, not a 500
-    on project creation. Callers that need strictness can test membership in
-    :data:`TEMPLATES` first.
+    Known aliases from sibling products resolve first (see
+    :data:`TEMPLATE_ALIASES`). An unknown name then falls back to
+    :data:`DEFAULT_TEMPLATE` rather than raising: a typo in a template id
+    should give someone a working project, not a 500 on project creation.
+    Callers that need strictness can test membership in :data:`TEMPLATES`
+    first.
     """
-    return TEMPLATES.get(name or DEFAULT_TEMPLATE, TEMPLATES[DEFAULT_TEMPLATE])
+    return TEMPLATES[canonical_template_id(name)]
 
 
 if __name__ == "__main__":  # pragma: no cover - image build helper
