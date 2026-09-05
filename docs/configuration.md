@@ -52,9 +52,11 @@ agent = HarnessAgent(
 
 - **`model`** is the default every turn uses unless the user picks another.
 - **`allowed_models`** is the picker's menu, surfaced to the client through
-  `GET /capabilities`. Leave it empty (or set only the default) and the picker
-  hides itself. A per-turn `model` override is honored only if it is in this
-  set, so an omitted list also means "no overrides".
+  `GET /capabilities`. Omit it and it defaults to just the configured `model`,
+  and the client shows the picker only when `/capabilities` advertises two or
+  more models - a single entry beside "Server default" is not a choice.
+  A per-turn `model` override is honored only if it is in this set, so an
+  omitted list also means "no overrides".
 - **`supports_prompt_cache`** tells the loop whether to place cache breakpoints,
   which makes repeat turns cheaper and faster on models that support it.
 

@@ -19,7 +19,7 @@ import '@speculosai/spec_harness/styles.css'
 
 | Import | What it is |
 |---|---|
-| `@speculosai/spec_harness` | The workspace: `HarnessProvider`, `Builder`, the panes (`ChatPane`, `PreviewPane`, `FileExplorer`, `VersionTimeline`), and the hooks (`useHarnessChat`, `useHarnessPreview`, `useHarnessFiles`). |
+| `@speculosai/spec_harness` | The workspace: `HarnessProvider`, `Builder`, the panes (`ChatPane`, `PreviewPane`, `FileExplorer`, `VersionTimeline`), the file/diff overlays (`HarnessOverlay`, `FileViewer`, `VersionChanges`, `DiffView`, `SourceView`), and the hooks (`useHarnessChat`, `useHarnessPreview`, `useHarnessFiles`, plus `useHarness`, `useAgentBusy`, `useRebuildKey`). |
 | `@speculosai/spec_harness/protocol` | The wire-protocol types and constants (`PROTOCOL_VERSION`, `SANDBOX_ATTRIBUTES`, the adapter interfaces). Zero runtime dependencies. |
 | `@speculosai/spec_harness/preview` | The framework-agnostic sandboxed iframe host: `buildSrcDoc`, `createBridge`, `makeShim`. Use it directly if you are not on React. |
 | `@speculosai/spec_harness/connectors-mcp` | The browser half of the MCP connector: the runtime bridge handler and the in-iframe shim. |

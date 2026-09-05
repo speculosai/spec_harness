@@ -42,7 +42,7 @@ import '@speculosai/spec_harness/styles.css'
 | `auth` | `HarnessAuth` | How the workspace proves who is asking, on every request. See [Identity](#identity-the-auth-prop). |
 | `brand` | `{ name, Logo? }` | Product name and a logo slot. See [White-labeling](#white-labeling-brand-and-strings). |
 | `strings` | `Record<string,string>` or a `t()` function | Overrides every UI label. Defaults to built-in English. |
-| `connectors` | `ConnectorProvider[]` | The client halves (bridge/shim) of your connectors. Omit for file/package tools only. See [Connectors](./connectors.md). |
+| `connectors` | `ConnectorProvider[]` | The client halves (bridge/shim) of your connectors. Optional: a bridge kind no client half claims is proxied to the router instead. See [Connectors](./connectors.md). |
 | `previewHead` | `string` | The preview document's `<head>`. Defaults to the preview package's head, which loads Tailwind from a CDN; a host under a strict CSP passes a precompiled, inlined stylesheet here instead. |
 
 ### Identity: the `auth` prop
@@ -111,7 +111,7 @@ and they keep talking to each other through the provider.
 | `<PreviewPane>` | The preview side: the null-origin sandboxed iframe, the postMessage bridge, the readable fallback, and the once-per-build auto-fix. |
 | `<FileExplorer>` | The read-only file tree. Selecting a file opens it full size, with a **Changes** tab that diffs it against any earlier version. The trust view - "what did the agent actually change?" - not an editor. |
 | `<VersionTimeline>` | Every turn as a restorable version (the last ~30), with undo. Each version's **Changes** shows exactly which files differ from the app as it is now, so a restore is never a guess. |
-| `<FileViewer>`, `<VersionChanges>`, `<DiffView>` | The overlays the two panes open, exported so a host can open a file or a version's changes from its own chrome. |
+| `<FileViewer>`, `<VersionChanges>`, `<HarnessOverlay>`, `<DiffView>`, `<SourceView>` | The overlays the two panes open and the renderers inside them, exported so a host can open a file or a version's changes from its own chrome. |
 
 ```tsx
 <HarnessProvider baseUrl="/api/builder" auth={{ getHeaders }}>
@@ -323,9 +323,10 @@ The end-to-end recipe, with the reasoning, is in
 
 You do not hand the client a list of what your backend supports. On mount it
 calls `GET {baseUrl}/capabilities` once and adapts: it hides the model picker
-when the server advertises no models, hides on-demand installs against a browser
-bundler, hides plan mode when the server does not offer it, and degrades any
-unlisted connector to a never-throw stub. If that endpoint 404s, the client
+when the server advertises no models, offers only the attachment kinds the
+server accepts, hides plan mode when the server does not offer it, hides the
+version timeline when the store keeps no snapshots, and degrades any connector
+the preview has no shim for to a never-throw stub. If that endpoint 404s, the client
 assumes protocol-1 defaults and carries on. You get correct UI against any
 conforming backend without per-server client code. The full field list is in
 [`spec/capabilities.md`](../spec/capabilities.md).

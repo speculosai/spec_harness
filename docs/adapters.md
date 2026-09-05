@@ -104,8 +104,9 @@ class LiteLLMProvider(LLMProvider):
   at least a `model`, plus optional `api_key`, `api_base`,
   `supports_prompt_cache`, and provider `extra`.
 - **`allowed_models(principal)`** (optional) is the model picker's menu,
-  surfaced through `/capabilities`. Omit it, or return only the default, to hide
-  the picker.
+  surfaced through `/capabilities`. The client shows the picker only when two or more models are offered;
+  `LiteLLMProvider` defaults it to the single configured model, which the picker
+  then shows as its only entry.
 - **`stream(messages, tools, cfg, signal)`** streams the completion as
   `LLMDelta` items (text deltas and tool-call deltas). `signal` aborts it.
 - **`is_context_window_error(err)`** tells the loop whether an error is a

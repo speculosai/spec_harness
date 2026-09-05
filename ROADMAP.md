@@ -14,7 +14,7 @@ Open source, Apache-2.0, same as everything else here.
 - **Code export and one-click deploy.** Take a generated app out of the workspace and run it yourself.
 - **Prompt queue.** Stack the next instruction while a build is still running.
 - **Cost and token meter.** Per-project spend in the UI, from the numbers `TelemetrySink` already emits. Inference is billed by your provider, on your keys - no markup.
-- **Curated dependency allowlist.** Constrain `install_package` to a reviewed set, for hosted deployments that need it.
+- **A curated default dependency allowlist.** `HarnessAgent(package_allowlist=[...])` already constrains `install_package` to a host-supplied set; what is still to come is a reviewed default list to start from, for hosted deployments that want one.
 - **Machine-readable spec artifacts.** JSON Schemas for the wire types under [`spec/schema/`](./spec/schema/), and a set of golden conformance fixtures - recorded SSE transcripts and request/response pairs - that both reference sides replay. Today the prose spec plus the `@speculosai/spec_harness/protocol` types are the source of truth; these make the contract machine-checkable.
 
 ## Modules in closed beta

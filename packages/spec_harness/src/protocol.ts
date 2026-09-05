@@ -476,7 +476,7 @@ export interface BundlerCaps {
 
 /**
  * SERVER or browser adapter. Turns `{files, deps}` into browser-ready `{code, css}`.
- * The default is the locked-down Bun.build sidecar (`speculosai/harness-bundler (the build-service image)`);
+ * The default is the locked-down Bun.build sidecar (the `speculosai/harness-bundler` image);
  * the optional browser bundler is `@speculosai/spec_harness/sandbox-browser`.
  */
 export interface Bundler {

@@ -38,7 +38,7 @@ from .llm import LiteLLMProvider
 from .stores import FsProjectStore, SQLiteProjectStore
 from .connectors import mcp_connector, postgres_connector
 
-__version__ = "0.1.5"
+__version__ = "0.1.6"
 
 __all__ = [
     "__version__",

@@ -98,12 +98,16 @@ import { mcpConnector } from '@speculosai/spec_harness/connectors-mcp'
 >
 ```
 
-If you omit `connectors` on the provider, the client degrades any connector the
-server offers to a never-throw stub: the preview still runs, data calls just
-return empty results instead of crashing. That is deliberate - a missing or
-unconfigured connector never takes the preview down. Which connector kinds a
-server actually has mounted is advertised through `GET /capabilities`, so the
-client only wires up what exists.
+Omitting `connectors` on the provider is the common case, not a degraded one:
+when no client half claims a bridge kind, the workspace proxies the request to
+`POST {base}/connectors/{kind}` on the mounted router and the server half
+answers it. A client half is only for handling a kind in the browser instead.
+
+Either way the in-iframe `window.<ns>` API is assembled from the shims the
+server returns alongside the bundle, and a connector name that no shim
+registered resolves to a never-throw stub: the preview still runs, those data
+calls just return empty results instead of crashing. That is deliberate - a
+missing or unconfigured connector never takes the preview down.
 
 ## Per-`Principal` scoping
 

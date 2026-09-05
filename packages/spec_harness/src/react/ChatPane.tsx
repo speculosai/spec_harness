@@ -385,7 +385,9 @@ export function ChatPane(props: ChatPaneProps): ReactElement {
             // the chat a line for one control.
             <div className="harness-composer-header">
               <div className="harness-composer-header-slot">{composerHeader}</div>
-              {models.length > 0 && modelPicker}
+              {/* A choice needs two options: with one model the picker
+                  only ever offered the server default and that same model. */}
+              {models.length > 1 && modelPicker}
             </div>
           ) : null}
           {attachments.length > 0 && (
@@ -459,7 +461,7 @@ export function ChatPane(props: ChatPaneProps): ReactElement {
             )}
           </div>
 
-          {models.length > 0 && !composerHeader && (
+          {models.length > 1 && !composerHeader && (
             <div className="harness-composer-meta">{modelPicker}</div>
           )}
         </form>

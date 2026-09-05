@@ -66,7 +66,7 @@ agent = HarnessAgent(
         Amounts are USD. The fiscal year runs April to March.
         Every table needs a CSV export button.
     """,
-    bundler_url="http://bundler:8081",                    # the speculosai/harness-bundler (the build-service image) sidecar
+    bundler_url="http://bundler:8081",                    # the speculosai/harness-bundler sidecar
     namespace="app",                                      # MUST match the frontend + generated apps
     connectors=[                                          # optional; omit => file/package tools only
         postgres_connector(dsn=os.environ["DATABASE_URL"]),
@@ -85,7 +85,8 @@ That mounts the full route surface under the prefix:
 | `/chat` | POST | hand-rolled SSE agent stream (the seven Harness events) |
 | `/bundle/{id}` | POST | proxy to the bundler sidecar + connector scoping |
 | `/projects[/{id}]` | GET/POST/PATCH | the minimal `Project` store surface |
-| `/projects/{id}/snapshots`, `/projects/{id}/rollback` | GET/POST | version timeline + rollback |
+| `/projects/{id}/snapshots`, `/projects/{id}/snapshots/{snapshotId}` | GET | the version timeline; one snapshot with its `files` and `messages` |
+| `/projects/{id}/rollback` | POST | restore a snapshot, capturing an undo point first |
 | `/capabilities` | GET | capability negotiation for the frontend |
 | `/connectors/{kind}` | POST | the mounted `ConnectorProvider.handle` |
 

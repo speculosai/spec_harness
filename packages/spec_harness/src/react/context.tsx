@@ -78,7 +78,11 @@ export interface HarnessProviderProps {
   brand?: HarnessBrand;
   /** Label overrides. */
   strings?: HarnessStrings;
-  /** Connector client halves (bridge/shim); omit for file/package tools only. */
+  /**
+   * Connector client halves (bridge/shim). Optional: a bridge kind no client
+   * half claims is proxied to the router's `POST {base}/connectors/{kind}`, so
+   * server-mounted connectors work with none of these supplied.
+   */
   connectors?: ConnectorProvider[];
   /**
    * The preview document's `<head>`. Defaults to the preview package's head, which

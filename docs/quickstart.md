@@ -195,6 +195,6 @@ here:
   requests, and which the server refuses to start with by design. Use bearer
   mode, or set an explicit per-origin allowlist. See the cross-origin recipe in
   [Embedding](./embedding.md) and [`spec/security.md`](../spec/security.md).
-- **The model picker is missing.** The client hides it when the server
-  advertises no `allowed_models` through `GET /capabilities`. Set the list on
+- **The model picker is missing.** The client shows it only when
+  `GET /capabilities` advertises two or more `models`. Set `allowed_models` on
   your `LLMProvider`; see [Configuration](./configuration.md#models).

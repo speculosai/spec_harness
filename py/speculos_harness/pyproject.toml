@@ -10,7 +10,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "speculos-harness"
-version = "0.1.5"
+version = "0.1.6"
 description = "Embeddable AI app-building workspace - the mountable FastAPI agent router and adapter interfaces."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -39,7 +39,9 @@ classifiers = [
 #   litellm   - the reference LLMProvider speaks whatever LiteLLM speaks
 #               (Anthropic / OpenAI / Bedrock / open weights / a LiteLLM proxy).
 #   httpx     - async client for the bundler sidecar and connector RPC.
-#   pydantic  - wire models generated from the protocol JSON Schema.
+#   pydantic  - used by FastAPI for request/response handling. The wire types
+#               themselves are hand-mirrored Python protocols today; see
+#               spec/schema/ for the planned machine-readable schemas.
 dependencies = [
     "fastapi>=0.110",
     "litellm>=1.40",

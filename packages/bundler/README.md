@@ -1,4 +1,4 @@
-# speculosai/harness-bundler (the build-service image)
+# speculosai/harness-bundler
 
 The build-service sidecar for [Speculos Harness](https://speculos.ai). It takes a project's files and dependencies and returns bundled, browser-ready code and CSS - `{files, deps}` in, `{code, css}` out. The workspace calls it every time a file changes, which is what makes the preview live: the agent writes, the service rebuilds, the sandbox refreshes. A rebuild is fast enough that there is no "run" button anywhere.
 

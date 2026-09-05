@@ -1,5 +1,5 @@
 /**
- * speculosai/harness-bundler (the build-service image)
+ * speculosai/harness-bundler - the build service
  *
  * The build-service sidecar: it takes a project's files and dependencies and returns
  * bundled, browser-ready code and CSS - `{files, deps}` in, `{code, css}` out. The

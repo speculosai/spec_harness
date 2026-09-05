@@ -280,8 +280,10 @@ class LLMProvider(Protocol):
     def allowed_models(self, principal: Principal) -> Sequence[str]:
         """The model picker's menu for this principal.
 
-        OPTIONAL. Populates ``/capabilities`` ``models``. Omit (or return the
-        single default) to hide the picker.
+        OPTIONAL. Populates ``/capabilities`` ``models``. The client shows
+        the picker only when two or more models are offered; the reference
+        provider defaults to the single configured model, so a one-model
+        deployment has no picker unless it names more.
         """
         ...
 

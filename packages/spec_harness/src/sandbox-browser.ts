@@ -25,7 +25,7 @@ const NOT_IMPLEMENTED =
   '@speculosai/spec_harness/sandbox-browser: the in-browser build path is a roadmap item and is not ' +
   'implemented yet. It ships once a shared bundler conformance suite proves parity with the ' +
   'server bundler, so until then `/capabilities` advertises `sandbox.location: "server"` only. ' +
-  'Use the build service (speculosai/harness-bundler (the build-service image), the `speculosai/harness-bundler` container) ' +
+  'Use the build service (the `speculosai/harness-bundler` container) ' +
   'and leave `useHarnessPreview({ bundle })` unset to get its default.';
 
 /** Options for {@link createBrowserBundler}. */
