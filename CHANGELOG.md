@@ -2,8 +2,15 @@
 
 The three artifacts (npm `@speculosai/spec_harness`, pip `speculos-harness`,
 image `speculosai/harness-bundler`) share one version number, and CI fails on
-drift between them. npm and the Python kit are at 0.1.3, the image at 0.1.2; **the PyPI publish is
+drift between them. npm and the Python kit are at 0.1.4, the image at 0.1.2; **the PyPI publish is
 still pending**, so the Python kit installs from this repository.
+
+## 0.1.4 - 2026-09-05
+
+- `useHarness`, `useAgentBusy` and `useRebuildKey` are exported. A host's own
+  component rendered into `chatHeader` or `composerHeader` needs the bus
+  (`requestFill`) and the busy flag, and 0.1.3 offered the slots without the
+  hooks that make them useful. No other change.
 
 ## 0.1.3 - 2026-09-05
 

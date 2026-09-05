@@ -26,7 +26,7 @@ export type {
   HarnessRequestInit,
   WorkspaceBus,
 } from './context';
-export { HarnessHttpError } from './context';
+export { HarnessHttpError, useAgentBusy, useHarness, useRebuildKey } from './context';
 export type { HarnessStrings } from './strings';
 
 /* ------------------------------------------------------------------------- *

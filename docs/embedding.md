@@ -84,7 +84,7 @@ crash-to-fix guard - so you never wire those up yourself.
 | `layout` | `"preview-left" \| "chat-left"` | `"preview-left"` | Which side the preview sits on. Pane order is a prop, not a fork. |
 | `filePanel` | `"explorer" \| "hidden"` | `"explorer"` | Whether the read-only file tree, per-turn diffs, and version timeline show. |
 | `onFirstPrompt` | `() => string \| undefined` | - | Seeds the first turn. The `?prompt=` deep-link convention: return a value to open the workspace mid-thought. |
-| `chatHeader` | `ReactNode` | - | Rendered at the top of the chat log: starter suggestions, a welcome. Pair it with `bus.requestFill(projectId, text)` to put a suggestion in the composer without sending it. |
+| `chatHeader` | `ReactNode` | - | Rendered at the top of the chat log: starter suggestions, a welcome. Inside it, `useHarness().bus.requestFill(projectId, text)` puts a suggestion in the composer without sending it, and `useAgentBusy(projectId)` says when a turn has started. |
 | `composerHeader` | `ReactNode` | - | Rendered inside the composer, above the text box and beside Send - the place for what the next turn has to hand, such as the data sources it may use. |
 
 The `?prompt=` deep link is worth calling out - a URL like
